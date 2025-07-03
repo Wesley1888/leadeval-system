@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, message, Tabs } from 'antd';
+import { Table, Button, message, Tabs, Card } from 'antd';
 import axios from 'axios';
 
 const AdminDashboard = ({ admin, onLogout }) => {
@@ -86,26 +86,45 @@ const AdminDashboard = ({ admin, onLogout }) => {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '40px auto', background: '#fff', padding: 24, borderRadius: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div>管理员：{admin.name}（{admin.code}）</div>
-        <Button onClick={onLogout}>退出登录</Button>
-      </div>
-      <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
-        {
-          key: 'detail',
-          label: '打分明细',
-          children: <>
-            <Button type="primary" onClick={handleExport} style={{ marginBottom: 16 }}>导出Excel</Button>
-            <Table columns={detailColumns} dataSource={data} rowKey={(_, i) => i} loading={loading} bordered />
-          </>
-        },
-        {
-          key: 'stat',
-          label: '打分统计',
-          children: <Table columns={statColumns} dataSource={stat} rowKey={r => r.target_code} loading={loading} bordered />
-        }
-      ]} />
+    <div style={{
+      maxWidth: 1200,
+      height: '100vh',
+      margin: '0 auto',
+      padding: 0,
+      background: '#f5f7fa',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center'
+    }}>
+      <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }} bodyStyle={{ padding: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottom: '1px solid #f0f0f0', borderRadius: '12px 12px 0 0', background: '#fff' }}>
+          <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1' }}>管理员：{admin.name}（{admin.code}）</div>
+          <Button onClick={onLogout} style={{ borderRadius: 8 }}>退出登录</Button>
+        </div>
+        <div style={{ padding: 24, overflowX: 'auto' }}>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={[
+              {
+                key: 'detail',
+                label: '打分明细',
+                children: <>
+                  <Button type="primary" onClick={handleExport} style={{ marginBottom: 16, borderRadius: 8 }}>导出Excel</Button>
+                  <Table columns={detailColumns} dataSource={data} rowKey={(_, i) => i} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
+                </>
+              },
+              {
+                key: 'stat',
+                label: '打分统计',
+                children: <Table columns={statColumns} dataSource={stat} rowKey={r => r.target_code} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
+              }
+            ]}
+          />
+        </div>
+      </Card>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const fixedScores = [10, 8, 6, 5];
 
-const Score = ({ user, onExit }) => {
+const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
   const [targets, setTargets] = useState([]);
   const [indicators, setIndicators] = useState([]);
   const [scores, setScores] = useState({}); // {targetCode: {indicatorId: 分数}}
@@ -193,7 +193,7 @@ const Score = ({ user, onExit }) => {
                   <Button
                     key={fs}
                     size="small"
-                    style={{ margin: 2 }}
+                    style={{ margin: '0 2px', minWidth: 30, textAlign: 'center', padding: '0 4px', fontWeight: 600 }}
                     onClick={() => handleScoreChange(target.code, ind.id, fs)}
                   >{fs}</Button>
                 ))}
@@ -239,15 +239,28 @@ const Score = ({ user, onExit }) => {
   ];
 
   return (
-    <div style={{ maxWidth: '90vw', margin: '40px auto', background: '#fff', padding: 24, borderRadius: 8, position: 'relative' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: 24 }}>中层管理人员考核打分</h2>
+    <div style={{
+      maxWidth: 900,
+      margin: '40px auto',
+      marginTop: 100,
+      background: '#fff',
+      padding: 24,
+      paddingTop: cardPaddingTop,
+      borderRadius: 12,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+      minHeight: '70vh',
+      position: 'relative',
+      overflowX: 'auto'
+    }}>
+      <h2 style={{ textAlign: 'center', marginBottom: 24, fontWeight: 700, fontSize: 22, color: '#1976a1' }}>中层管理人员考核打分</h2>
       <Table
         columns={columns}
         dataSource={dataSource}
         pagination={false}
         bordered
-        scroll={{ x: true }}
-        style={{ marginBottom: 16 }}
+        scroll={{ x: 'max-content' }}
+        style={{ marginBottom: 16, minWidth: 320 }}
+        size="middle"
       />
       {/* 按钮区：未全部打完分时只显示暂存退出，全部打完后只显示提交打分 */}
       {!allFilled ? (
@@ -256,12 +269,12 @@ const Score = ({ user, onExit }) => {
           block
           onClick={handleExit}
           loading={exitLoading}
-          style={{ background: '#faad14', color: '#fff', border: 'none' }}
+          style={{ background: '#faad14', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, borderRadius: 8, marginBottom: 8 }}
         >
           暂存退出
         </Button>
       ) : (
-        <Button type="primary" block onClick={handleSubmit} loading={loading} disabled={excellentCount > excellentLimit.maxExcellent}>
+        <Button type="primary" block onClick={handleSubmit} loading={loading} disabled={excellentCount > excellentLimit.maxExcellent} style={{ fontWeight: 600, fontSize: 16, borderRadius: 8, marginBottom: 8 }}>
           提交并完成退出
         </Button>
       )}
