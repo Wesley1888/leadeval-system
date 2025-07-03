@@ -29,23 +29,40 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1976a1', position: 'relative' }}>
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      background: '#1976a1',
+      padding: 0,
+      overflow: 'hidden'
+    }}>
       {/* 左上角按钮 */}
       <div style={{ position: 'fixed', top: 0, left: 0, padding: 16, zIndex: 1000 }}>
         <Button type="link" style={{ color: '#fff', fontWeight: 600 }} onClick={() => setNoticeVisible(true)}>考核通知</Button>
         <Button type="link" style={{ color: '#fff', fontWeight: 600 }} onClick={() => setHelpVisible(true)}>使用说明</Button>
       </div>
-      <div style={{ color: '#fff', fontSize: 32, fontWeight: 700, marginBottom: 32, textAlign: 'center', lineHeight: 1.3 }}>
+      <div style={{
+        color: '#fff',
+        fontSize: 28,
+        fontWeight: 700,
+        marginBottom: 24,
+        textAlign: 'center',
+        lineHeight: 1.3,
+        maxWidth: 320
+      }}>
         中煤平朔集团有限公司<br />中层管理人员考核系统
       </div>
-      <Card style={{ width: 350 }}>
-        <h2 style={{ textAlign: 'center', marginBottom: 24 }}>请输入8位考核码</h2>
+      <Card style={{ width: '100%', maxWidth: 350, borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: 20 }}>请输入8位考核码</h2>
         <Form onFinish={onFinish}>
           <Form.Item name="code" rules={[{ required: true, message: '请输入考核码' }, { len: 8, message: '考核码为8位' }]}>
-            <Input maxLength={8} placeholder="8位考核码" autoFocus />
+            <Input maxLength={8} placeholder="8位考核码" autoFocus size="large" style={{ borderRadius: 8 }} />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading}>
+            <Button type="primary" htmlType="submit" block loading={loading} size="large" style={{ borderRadius: 8 }}>
               登录
             </Button>
           </Form.Item>

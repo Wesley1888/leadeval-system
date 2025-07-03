@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db = require('../db');
-
-const SECRET = 'leadeval_secret'; // 可放到环境变量
+const SECRET = process.env.JWT_SECRET || 'leadeval_secret'; // 优先用环境变量
 
 exports.login = async (req, res) => {
   const { code } = req.body;
