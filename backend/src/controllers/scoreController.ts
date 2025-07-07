@@ -1,17 +1,35 @@
-const db = require('../db');
-const ExcelJS = require('exceljs');
+import { Request, Response, RequestHandler } from 'express';
+import db from '../db';
+import ExcelJS from 'exceljs';
 
-exports.submitScore = async (req, res) => {
+interface SubmitScoreRequest {
+  scorer_code: string;
+  target_code: string;
+  indicator_id: number;
+  score: number;
+  year: number;
+}
+
+interface ScoreQuery {
+  scorer_code?: string;
+  year?: string;
+  code?: string;
+}
+
+export const submitScore = async (req: Request<{}, {}, SubmitScoreRequest>, res: Response): Promise<void> => {
   const { scorer_code, target_code, indicator_id, score, year } = req.body;
   if (!scorer_code || !target_code || !indicator_id || !score || !year) {
-    return res.status(400).json({ message: '参数不完整' });
+    res.status(400).json({ message: '参数不完整' });
+    return;
   }
+  
   try {
     // 判断是否已存在该打分记录
     const [rows] = await db.query(
       'SELECT id FROM score WHERE scorer_code = ? AND target_code = ? AND indicator_id = ? AND year = ?',
       [scorer_code, target_code, indicator_id, year]
-    );
+    ) as [any[], any];
+    
     if (rows.length > 0) {
       // 已存在则更新
       await db.query(
@@ -31,30 +49,32 @@ exports.submitScore = async (req, res) => {
   }
 };
 
-exports.getExcellentLimit = (req, res) => {
+export const getExcellentLimit = (req: Request, res: Response): void => {
   res.json({
     excellentScore: 90, // 优秀分数线
     maxExcellent: 3    // 允许优秀人数
   });
 };
 
-exports.getScoresByScorer = async (req, res) => {
+export const getScoresByScorer: RequestHandler = async (req, res, next) => {
   const { scorer_code, year } = req.query;
   if (!scorer_code || !year) {
-    return res.status(400).json({ message: '参数不完整' });
+    res.status(400).json({ message: '参数不完整' });
+    return;
   }
+  
   try {
     const [rows] = await db.query(
       'SELECT * FROM score WHERE scorer_code = ? AND year = ?',
       [scorer_code, year]
-    );
+    ) as [any[], any];
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
 };
 
-exports.exportScoresExcel = async (req, res) => {
+export const exportScoresExcel: RequestHandler = async (req, res, next) => {
   const { year } = req.query;
   try {
     const [rows] = await db.query(`
@@ -65,7 +85,7 @@ exports.exportScoresExcel = async (req, res) => {
       LEFT JOIN indicator i ON s.indicator_id = i.id
       WHERE s.year = ?
       ORDER BY s.scorer_code, s.target_code, s.indicator_id
-    `, [year || new Date().getFullYear() + 1]);
+    `, [year || new Date().getFullYear() + 1]) as [any[], any];
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Scores');
@@ -90,20 +110,28 @@ exports.exportScoresExcel = async (req, res) => {
   }
 };
 
-exports.getAllScores = async (req, res) => {
+export const getAllScores: RequestHandler = async (req, res, next) => {
   const { year } = req.query;
-  if (!year) return res.status(400).json({ message: '参数不完整' });
+  if (!year) {
+    res.status(400).json({ message: '参数不完整' });
+    return;
+  }
+  
   try {
-    const [rows] = await db.query('SELECT * FROM score WHERE year = ?', [year]);
+    const [rows] = await db.query('SELECT * FROM score WHERE year = ?', [year]) as [any[], any];
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
 };
 
-exports.getScoreStat = async (req, res) => {
+export const getScoreStat: RequestHandler = async (req, res, next) => {
   const { year } = req.query;
-  if (!year) return res.status(400).json({ message: '参数不完整' });
+  if (!year) {
+    res.status(400).json({ message: '参数不完整' });
+    return;
+  }
+  
   try {
     const [rows] = await db.query(`
       SELECT u.code as target_code, u.name as target_name, d.id as department_id, d.name as department_name,
@@ -113,9 +141,9 @@ exports.getScoreStat = async (req, res) => {
       LEFT JOIN department d ON u.department_id = d.id
       WHERE s.year = ?
       GROUP BY s.target_code, s.indicator_id
-    `, [year]);
+    `, [year]) as [any[], any];
     // 整理为每人一行
-    const statMap = {};
+    const statMap: any = {};
     for (const row of rows) {
       if (!statMap[row.target_code]) {
         statMap[row.target_code] = {
@@ -131,7 +159,7 @@ exports.getScoreStat = async (req, res) => {
       statMap[row.target_code].total += row.score;
     }
     // 计算平均分
-    const result = Object.values(statMap).map(item => ({
+    const result = Object.values(statMap).map((item: any) => ({
       ...item,
       average: Object.keys(item.scores).length
         ? (item.total / Object.keys(item.scores).length).toFixed(2)
@@ -143,34 +171,45 @@ exports.getScoreStat = async (req, res) => {
   }
 };
 
-exports.getSelfScores = async (req, res) => {
+export const getSelfScores: RequestHandler = async (req, res, next) => {
   const { scorer_code, year } = req.query;
   if (!scorer_code || !year) {
-    return res.status(400).json({ message: '参数不完整' });
+    res.status(400).json({ message: '参数不完整' });
+    return;
   }
   try {
     const [rows] = await db.query(
       'SELECT * FROM score WHERE scorer_code = ? AND year = ?',
       [scorer_code, year]
-    );
+    ) as [any[], any];
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
 };
 
-exports.checkFinished = async (req, res) => {
+export const checkFinished: RequestHandler = async (req, res, next) => {
   const { code, year } = req.query;
-  if (!code || !year) return res.status(400).json({ message: '参数不完整' });
-  // 获取该考核码所在部门所有被考核人和所有指标
-  const [[user]] = await db.query('SELECT department_id FROM user WHERE code = ?', [code]);
-  if (!user) return res.status(404).json({ message: '考核码不存在' });
-  const [targets] = await db.query('SELECT code FROM user WHERE department_id = ? AND code != ?', [user.department_id, code]);
-  const [indicators] = await db.query('SELECT id FROM indicator');
-  const needCount = targets.length * indicators.length;
-  const [scores] = await db.query(
-    'SELECT COUNT(*) as cnt FROM score WHERE scorer_code = ? AND year = ?',
-    [code, year]
-  );
-  res.json({ finished: scores[0].cnt >= needCount });
-}; 
+  if (!code || !year) {
+    res.status(400).json({ message: '参数不完整' });
+    return;
+  }
+  try {
+    // 获取该考核码所在部门所有被考核人和所有指标
+    const [[user]] = await db.query('SELECT department_id FROM user WHERE code = ?', [code]) as [any[], any];
+    if (!user) {
+      res.status(404).json({ message: '考核码不存在' });
+      return;
+    }
+    const [targets] = await db.query('SELECT code FROM user WHERE department_id = ? AND code != ?', [user.department_id, code]) as [any[], any];
+    const [indicators] = await db.query('SELECT id FROM indicator') as [any[], any];
+    const needCount = targets.length * indicators.length;
+    const [scores] = await db.query(
+      'SELECT COUNT(*) as cnt FROM score WHERE scorer_code = ? AND year = ?',
+      [code, year]
+    ) as [any[], any];
+    res.json({ finished: scores[0].cnt >= needCount });
+  } catch (err) {
+    res.status(500).json({ message: '服务器错误' });
+  }
+};

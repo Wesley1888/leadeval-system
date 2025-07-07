@@ -2,16 +2,45 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, message, Tabs, Card } from 'antd';
 import axios from 'axios';
 
-const AdminDashboard = ({ admin, onLogout }) => {
-  const [data, setData] = useState([]);
-  const [stat, setStat] = useState([]);
+interface Admin {
+  token: string;
+  name: string;
+  code: string;
+}
+
+interface AdminDashboardProps {
+  admin: Admin;
+  onLogout: () => void;
+}
+
+interface ScoreDetail {
+  scorer_code: string;
+  target_code: string;
+  indicator_id: number;
+  score: number;
+  year: number;
+}
+
+interface StatRow {
+  target_code: string;
+  target_name: string;
+  department_id: number;
+  department_name: string;
+  scores: Record<string, number>;
+  total: number;
+  average: string;
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
+  const [data, setData] = useState<ScoreDetail[]>([]);
+  const [stat, setStat] = useState<StatRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('detail');
+  const [activeTab, setActiveTab] = useState<'detail' | 'stat'>('detail');
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:3001/api/score/all', {
+      const res = await axios.get<ScoreDetail[]>('http://localhost:3001/api/score/all', {
         headers: { Authorization: `Bearer ${admin.token}` },
         params: { year: new Date().getFullYear() + 1 }
       });
@@ -26,7 +55,7 @@ const AdminDashboard = ({ admin, onLogout }) => {
   const fetchStat = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:3001/api/score/stat', {
+      const res = await axios.get<StatRow[]>('http://localhost:3001/api/score/stat', {
         headers: { Authorization: `Bearer ${admin.token}` },
         params: { year: new Date().getFullYear() + 1 }
       });
@@ -106,14 +135,14 @@ const AdminDashboard = ({ admin, onLogout }) => {
         <div style={{ padding: 24, overflowX: 'auto' }}>
           <Tabs
             activeKey={activeTab}
-            onChange={setActiveTab}
+            onChange={key => setActiveTab(key as 'detail' | 'stat')}
             items={[
               {
                 key: 'detail',
                 label: '打分明细',
                 children: <>
                   <Button type="primary" onClick={handleExport} style={{ marginBottom: 16, borderRadius: 8 }}>导出Excel</Button>
-                  <Table columns={detailColumns} dataSource={data} rowKey={(_, i) => i} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
+                  <Table columns={detailColumns} dataSource={data} rowKey={(_, i) => i ?? 0} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
                 </>
               },
               {

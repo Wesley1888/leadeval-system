@@ -2,26 +2,64 @@ import React, { useEffect, useState } from 'react';
 import { Table, InputNumber, Button, message, Tooltip, Alert } from 'antd';
 import axios from 'axios';
 
+// 用户类型
+type User = {
+  code: string;
+  department_id: number;
+  name: string;
+  [key: string]: any;
+};
+
+// 被考核人类型
+interface Target {
+  code: string;
+  name: string;
+  [key: string]: any;
+}
+
+// 指标类型
+interface Indicator {
+  id: number;
+  name: string;
+  [key: string]: any;
+}
+
+// props
+type ScoreProps = {
+  user: User;
+  onExit?: () => void;
+  cardPaddingTop?: number;
+};
+
+type ScoresMap = {
+  [targetCode: string]: {
+    [indicatorId: number]: number;
+  };
+};
+
+type TooltipOpenMap = {
+  [key: string]: boolean;
+};
+
 const fixedScores = [10, 8, 6, 5];
 
-const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
-  const [targets, setTargets] = useState([]);
-  const [indicators, setIndicators] = useState([]);
-  const [scores, setScores] = useState({}); // {targetCode: {indicatorId: 分数}}
-  const [loading, setLoading] = useState(false);
-  const [excellentLimit, setExcellentLimit] = useState({ excellentScore: 90, maxExcellent: 3 });
-  const [excellentCount, setExcellentCount] = useState(0);
-  const [exitLoading, setExitLoading] = useState(false);
-  // 悬浮快捷打分按钮的显示状态
-  const [tooltipOpen, setTooltipOpen] = useState({}); // {targetCode_indicatorId: boolean}
-  const tooltipTimers = React.useRef({});
-  const tooltipHover = React.useRef({});
+const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
+  const [targets, setTargets] = useState<Target[]>([]);
+  const [indicators, setIndicators] = useState<Indicator[]>([]);
+  const [scores, setScores] = useState<ScoresMap>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [excellentLimit, setExcellentLimit] = useState<{ excellentScore: number; maxExcellent: number }>({ excellentScore: 90, maxExcellent: 3 });
+  const [excellentCount, setExcellentCount] = useState<number>(0);
+  const [exitLoading, setExitLoading] = useState<boolean>(false);
+  const [tooltipOpen, setTooltipOpen] = useState<TooltipOpenMap>({});
+  const tooltipTimers = React.useRef<{ [key: string]: any }>({});
+  const tooltipHover = React.useRef<{ [key: string]: boolean }>({});
 
   // 获取本单位所有被考核人
   useEffect(() => {
     if (user?.department_id) {
       axios.get(`http://localhost:3001/api/users?department_id=${user.department_id}`)
-        .then(res => setTargets(res.data.filter(t => t.code !== user.code)))
+        .then(res => setTargets((res.data as Target[]).filter((t: Target) => t.code !== user.code)))
         .catch(() => message.error('获取被考核人失败'));
     }
   }, [user]);
@@ -62,8 +100,8 @@ const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
       axios.get('http://localhost:3001/api/score/self', {
         params: { scorer_code: user.code, year: new Date().getFullYear() + 1 }
       }).then(res => {
-        const map = {};
-        for (const row of res.data) {
+        const map: ScoresMap = {};
+        for (const row of res.data as any[]) {
           if (!map[row.target_code]) map[row.target_code] = {};
           map[row.target_code][row.indicator_id] = row.score;
         }
@@ -73,7 +111,7 @@ const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
   }, [user, indicators, targets]);
 
   // 分数变更
-  const handleScoreChange = (targetCode, indicatorId, value) => {
+  const handleScoreChange = (targetCode: string, indicatorId: number, value: number) => {
     setScores(prev => ({
       ...prev,
       [targetCode]: {
@@ -140,7 +178,7 @@ const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
     }
   };
 
-  const handleTooltipVisible = (key, visible) => {
+  const handleTooltipVisible = (key: string, visible: boolean) => {
     if (visible) {
       if (tooltipTimers.current[key]) {
         clearTimeout(tooltipTimers.current[key]);
@@ -158,7 +196,7 @@ const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
   };
 
   // 悬浮按钮区域鼠标事件
-  const handleTooltipContentEnter = key => {
+  const handleTooltipContentEnter = (key: string) => {
     tooltipHover.current[key] = true;
     if (tooltipTimers.current[key]) {
       clearTimeout(tooltipTimers.current[key]);
@@ -166,7 +204,7 @@ const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
     }
     setTooltipOpen(prev => ({ ...prev, [key]: true }));
   };
-  const handleTooltipContentLeave = key => {
+  const handleTooltipContentLeave = (key: string) => {
     tooltipHover.current[key] = false;
     tooltipTimers.current[key] = setTimeout(() => {
       setTooltipOpen(prev => ({ ...prev, [key]: false }));
@@ -227,7 +265,7 @@ const Score = ({ user, onExit, cardPaddingTop = 24 }) => {
       title: '姓名',
       dataIndex: 'name',
       key: 'name',
-      fixed: 'left',
+      fixed: 'left' as const,
       width: 100
     },
     ...indicators.map(ind => ({

@@ -2,16 +2,36 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, message } from 'antd';
 import axios from 'axios';
 
-const AdminLogin = ({ onLogin, onBack }) => {
+interface AdminLoginResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  admin?: {
+    id: number;
+    username: string;
+    role: string;
+  };
+}
+
+interface AdminLoginProps {
+  onLogin: (data: { token: string; admin: { id: number; username: string; role: string } }) => void;
+  onBack: () => void;
+}
+
+const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
   const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values) => {
+  const onFinish = async (values: { code: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:3001/api/admin/login', values);
-      message.success('登录成功');
-      onLogin(res.data);
-    } catch (err) {
+      const res = await axios.post<AdminLoginResponse>('http://localhost:3001/api/admin/login', values);
+      if (res.data.success && res.data.token && res.data.admin) {
+        message.success('登录成功');
+        onLogin({ token: res.data.token, admin: res.data.admin });
+      } else {
+        message.error(res.data.message || '登录失败');
+      }
+    } catch (err: any) {
       message.error(err.response?.data?.message || '登录失败');
     } finally {
       setLoading(false);

@@ -2,26 +2,36 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message, Card, Modal } from 'antd';
 import axios from 'axios';
 
-const Login = ({ onLogin }) => {
-  const [loading, setLoading] = useState(false);
-  const [noticeVisible, setNoticeVisible] = useState(false);
-  const [helpVisible, setHelpVisible] = useState(false);
+// 用户类型
+interface User {
+  code: string;
+  name: string;
+  [key: string]: any;
+}
 
-  const onFinish = async (values) => {
+interface LoginProps {
+  onLogin: (user: User) => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [noticeVisible, setNoticeVisible] = useState<boolean>(false);
+  const [helpVisible, setHelpVisible] = useState<boolean>(false);
+
+  const onFinish = async (values: { code: string }) => {
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:3001/api/login', { code: values.code });
-      // 登录成功后判断是否已全部打分
+      const res = await axios.post<any>('http://localhost:3001/api/login', { code: values.code });
       const year = new Date().getFullYear() + 1;
-      const check = await axios.get('http://localhost:3001/api/score/finished', { params: { code: res.data.code, year } });
+      const check = await axios.get<{ finished: boolean }>('http://localhost:3001/api/score/finished', { params: { code: res.data.user.code, year } });
       if (check.data.finished) {
         message.warning('您已完成全部打分，无法再次进入。');
         setLoading(false);
         return;
       }
       message.success('登录成功');
-      onLogin(res.data);
-    } catch (err) {
+      onLogin(res.data.user);
+    } catch (err: any) {
       message.error(err.response?.data?.message || '登录失败');
     } finally {
       setLoading(false);
