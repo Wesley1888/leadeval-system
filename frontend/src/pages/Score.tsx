@@ -1,18 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Table, InputNumber, Button, message, Tooltip, Alert } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-// 用户类型
-type User = {
-  code: string;
-  department_id: number;
-  name: string;
-  [key: string]: any;
-};
+import { useAuth } from '../contexts/AuthContext';
 
 // 被考核人类型
 interface Target {
-  code: string;
+  id: number;
   name: string;
   [key: string]: any;
 }
@@ -23,13 +17,6 @@ interface Indicator {
   name: string;
   [key: string]: any;
 }
-
-// props
-type ScoreProps = {
-  user: User;
-  onExit?: () => void;
-  cardPaddingTop?: number;
-};
 
 type ScoresMap = {
   [targetCode: string]: {
@@ -43,7 +30,10 @@ type TooltipOpenMap = {
 
 const fixedScores = [10, 8, 6, 5];
 
-const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
+const Score: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const cardPaddingTop = 48; // 固定值，因为现在有固定的顶部导航
   const [targets, setTargets] = useState<Target[]>([]);
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [scores, setScores] = useState<ScoresMap>({});
@@ -57,9 +47,9 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
 
   // 获取本单位所有被考核人
   useEffect(() => {
-    if (user?.department_id) {
-      axios.get(`http://localhost:3001/api/users?department_id=${user.department_id}`)
-        .then(res => setTargets((res.data as Target[]).filter((t: Target) => t.code !== user.code)))
+    if (user?.department) {
+      axios.get(`http://localhost:3001/api/users?department=${user.department}`)
+        .then(res => setTargets((res.data as Target[])))
         .catch(() => message.error('获取被考核人失败'));
     }
   }, [user]);
@@ -85,7 +75,7 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
       for (const target of targets) {
         let total = 0;
         for (const ind of indicators) {
-          const v = scores[target.code]?.[ind.id];
+          const v = scores[target.id]?.[ind.id];
           if (typeof v === 'number') total += v;
         }
         if (total >= excellentLimit.excellentScore) count++;
@@ -102,8 +92,8 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
       }).then(res => {
         const map: ScoresMap = {};
         for (const row of res.data as any[]) {
-          if (!map[row.target_code]) map[row.target_code] = {};
-          map[row.target_code][row.indicator_id] = row.score;
+          if (!map[row.target_id]) map[row.target_id] = {};
+          map[row.target_id][row.indicator_id] = row.score;
         }
         setScores(map);
       });
@@ -123,7 +113,7 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
 
   // 判断是否全部打完分
   const allFilled = targets.length > 0 && indicators.length > 0 && targets.every(target =>
-    indicators.every(ind => typeof scores[target.code]?.[ind.id] === 'number')
+    indicators.every(ind => typeof scores[target.id]?.[ind.id] === 'number')
   );
 
   // 提交打分
@@ -132,11 +122,11 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
     try {
       for (const target of targets) {
         for (const indicator of indicators) {
-          const score = scores[target.code]?.[indicator.id];
+          const score = scores[target.id]?.[indicator.id];
           if (score == null) continue;
           await axios.post('http://localhost:3001/api/score', {
-            scorer_code: user.code,
-            target_code: target.code,
+            scorer_code: user!.code,
+            target_id: target.id,
             indicator_id: indicator.id,
             score,
             year: new Date().getFullYear() + 1 // 例如2025
@@ -145,7 +135,8 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
       }
       message.success('打分成功');
       setScores({});
-      if (onExit) onExit();
+      logout();
+      navigate('/login');
     } catch {
       message.error('打分失败');
     } finally {
@@ -159,11 +150,11 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
     try {
       for (const target of targets) {
         for (const indicator of indicators) {
-          const score = scores[target.code]?.[indicator.id];
+          const score = scores[target.id]?.[indicator.id];
           if (score == null) continue;
           await axios.post('http://localhost:3001/api/score', {
-            scorer_code: user.code,
-            target_code: target.code,
+            scorer_code: user!.code,
+            target_id: target.id,
             indicator_id: indicator.id,
             score,
             year: new Date().getFullYear() + 1
@@ -174,7 +165,8 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
       // 可选：message.error('暂存失败');
     } finally {
       setExitLoading(false);
-      if (onExit) onExit();
+      logout();
+      navigate('/login');
     }
   };
 
@@ -213,11 +205,11 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
 
   // 构造表格数据
   const dataSource = targets.map(target => ({
-    key: target.code,
+    key: target.id,
     name: target.name,
     ...Object.fromEntries(
       indicators.map(ind => {
-        const tooltipKey = `${target.code}_${ind.id}`;
+        const tooltipKey = `${target.id}_${ind.id}`;
         return [
           `indicator_${ind.id}`,
           <Tooltip
@@ -232,7 +224,7 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
                     key={fs}
                     size="small"
                     style={{ margin: '0 2px', minWidth: 30, textAlign: 'center', padding: '0 4px', fontWeight: 600 }}
-                    onClick={() => handleScoreChange(target.code, ind.id, fs)}
+                    onClick={() => handleScoreChange(String(target.id), ind.id, fs)}
                   >{fs}</Button>
                 ))}
               </div>
@@ -247,8 +239,8 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
               <InputNumber
                 min={0}
                 max={ind.max_score}
-                value={scores[target.code]?.[ind.id]}
-                onChange={val => handleScoreChange(target.code, ind.id, val)}
+                value={scores[target.id]?.[ind.id]}
+                onChange={val => handleScoreChange(String(target.id), ind.id, val)}
                 style={{ width: 80 }}
                 placeholder={`满分${ind.max_score}`}
               />
@@ -277,19 +269,26 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
   ];
 
   return (
-    <div style={{
-      maxWidth: 900,
-      margin: '40px auto',
-      marginTop: 100,
-      background: '#fff',
-      padding: 24,
-      paddingTop: cardPaddingTop,
-      borderRadius: 12,
-      boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-      minHeight: '70vh',
-      position: 'relative',
-      overflowX: 'auto'
-    }}>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh' }}>
+      {/* 顶部导航栏 */}
+      <div style={{ position: 'fixed', top: 24, right: 24, padding: 12, zIndex: 1000, background: 'rgba(255,255,255,0.95)', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+        <span style={{ marginRight: 16 }}>当前考核码：{user!.code}</span>
+        <Button onClick={() => { logout(); navigate('/login'); }}>退出登录</Button>
+      </div>
+      
+      <div style={{
+        maxWidth: 900,
+        margin: '40px auto',
+        marginTop: 100,
+        background: '#fff',
+        padding: 24,
+        paddingTop: cardPaddingTop,
+        borderRadius: 12,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        minHeight: '70vh',
+        position: 'relative',
+        overflowX: 'auto'
+      }}>
       <h2 style={{ textAlign: 'center', marginBottom: 24, fontWeight: 700, fontSize: 22, color: '#1976a1' }}>中层管理人员考核打分</h2>
       <Table
         columns={columns}
@@ -319,6 +318,7 @@ const Score: React.FC<ScoreProps> = ({ user, onExit, cardPaddingTop = 24 }) => {
       {excellentCount > excellentLimit.maxExcellent && (
         <Alert type="error" showIcon style={{marginTop:8}} message={`优秀人数已超出限制（最多${excellentLimit.maxExcellent}人，当前${excellentCount}人）`} />
       )}
+      </div>
     </div>
   );
 };

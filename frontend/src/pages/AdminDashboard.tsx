@@ -1,37 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, message, Tabs, Card } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-interface Admin {
-  token: string;
-  name: string;
-  code: string;
-}
-
-interface AdminDashboardProps {
-  admin: Admin;
-  onLogout: () => void;
-}
+import { useAuth } from '../contexts/AuthContext';
 
 interface ScoreDetail {
   scorer_code: string;
-  target_code: string;
+  target_id: number;
   indicator_id: number;
   score: number;
   year: number;
 }
 
 interface StatRow {
-  target_code: string;
+  target_id: number;
   target_name: string;
-  department_id: number;
+  department: number;
   department_name: string;
   scores: Record<string, number>;
   total: number;
   average: string;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
+const AdminDashboard: React.FC = () => {
+  const { admin, logout } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<ScoreDetail[]>([]);
   const [stat, setStat] = useState<StatRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +34,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
     setLoading(true);
     try {
       const res = await axios.get<ScoreDetail[]>('http://localhost:3001/api/score/all', {
-        headers: { Authorization: `Bearer ${admin.token}` },
+        headers: { Authorization: `Bearer ${admin!.token}` },
         params: { year: new Date().getFullYear() + 1 }
       });
       setData(res.data);
@@ -56,7 +49,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
     setLoading(true);
     try {
       const res = await axios.get<StatRow[]>('http://localhost:3001/api/score/stat', {
-        headers: { Authorization: `Bearer ${admin.token}` },
+        headers: { Authorization: `Bearer ${admin!.token}` },
         params: { year: new Date().getFullYear() + 1 }
       });
       setStat(res.data);
@@ -78,7 +71,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
       const res = await axios.get(
         `http://localhost:3001/api/score/export?year=${new Date().getFullYear() + 1}`,
         {
-          headers: { Authorization: `Bearer ${admin.token}` },
+          headers: { Authorization: `Bearer ${admin!.token}` },
           responseType: 'blob'
         }
       );
@@ -97,7 +90,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
 
   const detailColumns = [
     { title: '打分人考核码', dataIndex: 'scorer_code', key: 'scorer_code' },
-    { title: '被考核码', dataIndex: 'target_code', key: 'target_code' },
+    { title: '被考核人ID', dataIndex: 'target_id', key: 'target_id' },
     { title: '指标ID', dataIndex: 'indicator_id', key: 'indicator_id' },
     { title: '分数', dataIndex: 'score', key: 'score' },
     { title: '年份', dataIndex: 'year', key: 'year' }
@@ -106,7 +99,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
   // 动态生成统计表头
   const indicatorIds = stat.length ? Object.keys(stat[0].scores) : [];
   const statColumns = [
-    { title: '被考核码', dataIndex: 'target_code', key: 'target_code' },
+    { title: '被考核人ID', dataIndex: 'target_id', key: 'target_id' },
     { title: '姓名', dataIndex: 'target_name', key: 'target_name' },
     { title: '部门', dataIndex: 'department_name', key: 'department_name' },
     ...indicatorIds.map(id => ({ title: `指标${id}`, dataIndex: ['scores', id], key: id })),
@@ -127,10 +120,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
       justifyContent: 'center',
       alignItems: 'center'
     }}>
-      <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }} bodyStyle={{ padding: 0 }}>
+      <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }} styles={{ body: { padding: 0 } }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottom: '1px solid #f0f0f0', borderRadius: '12px 12px 0 0', background: '#fff' }}>
-          <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1' }}>管理员：{admin.name}（{admin.code}）</div>
-          <Button onClick={onLogout} style={{ borderRadius: 8 }}>退出登录</Button>
+          <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1' }}>管理员：{admin!.name}（{admin!.code}）</div>
+          <Button onClick={() => { logout(); navigate('/login'); }} style={{ borderRadius: 8 }}>退出登录</Button>
         </div>
         <div style={{ padding: 24, overflowX: 'auto' }}>
           <Tabs
@@ -148,7 +141,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ admin, onLogout }) => {
               {
                 key: 'stat',
                 label: '打分统计',
-                children: <Table columns={statColumns} dataSource={stat} rowKey={r => r.target_code} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
+                children: <Table columns={statColumns} dataSource={stat} rowKey={r => r.target_id} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
               }
             ]}
           />

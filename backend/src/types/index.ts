@@ -1,7 +1,7 @@
 // 用户相关类型
 export interface User {
   id: number;
-  username: string;
+  name: string;
   password: string;
   role: 'user' | 'admin';
   department: string;
@@ -19,7 +19,7 @@ export interface UserLoginResponse {
   user?: {
     id: number;
     code: string;
-    username: string;
+    name: string;
     department: string;
     role: string;
   };
@@ -37,7 +37,7 @@ export interface AdminLoginResponse {
   token?: string;
   admin?: {
     id: number;
-    username: string;
+    name: string;
     role: string;
   };
 }

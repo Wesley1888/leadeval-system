@@ -16,34 +16,17 @@ interface ScoreQuery {
   code?: string;
 }
 
-export const submitScore = async (req: Request<{}, {}, SubmitScoreRequest>, res: Response): Promise<void> => {
-  const { scorer_code, target_code, indicator_id, score, year } = req.body;
-  if (!scorer_code || !target_code || !indicator_id || !score || !year) {
-    res.status(400).json({ message: '参数不完整' });
-    return;
+export const submitScore = async (req, res) => {
+  const { scorer_code, target_id, indicator_id, score, year } = req.body;
+  if (!scorer_code || !target_id || !indicator_id || !score || !year) {
+    return res.status(400).json({ message: '参数不完整' });
   }
-  
   try {
-    // 判断是否已存在该打分记录
-    const [rows] = await db.query(
-      'SELECT id FROM score WHERE scorer_code = ? AND target_code = ? AND indicator_id = ? AND year = ?',
-      [scorer_code, target_code, indicator_id, year]
-    ) as [any[], any];
-    
-    if (rows.length > 0) {
-      // 已存在则更新
-      await db.query(
-        'UPDATE score SET score = ? WHERE id = ?',
-        [score, rows[0].id]
-      );
-    } else {
-      // 不存在则插入
-      await db.query(
-        'INSERT INTO score (scorer_code, target_code, indicator_id, score, year) VALUES (?, ?, ?, ?, ?)',
-        [scorer_code, target_code, indicator_id, score, year]
-      );
-    }
-    res.json({ message: '打分成功' });
+    await db.query(
+      'INSERT INTO score (scorer_code, target_id, indicator_id, score, year) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE score = VALUES(score)',
+      [scorer_code, target_id, indicator_id, score, year]
+    );
+    res.json({ success: true, message: '打分成功' });
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
@@ -125,63 +108,61 @@ export const getAllScores: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getScoreStat: RequestHandler = async (req, res, next) => {
+export const getScoreStat = async (req, res) => {
   const { year } = req.query;
-  if (!year) {
-    res.status(400).json({ message: '参数不完整' });
-    return;
-  }
-  
+  if (!year) return res.status(400).json({ message: '参数不完整' });
   try {
     const [rows] = await db.query(`
-      SELECT u.code as target_code, u.name as target_name, d.id as department_id, d.name as department_name,
+      SELECT p.id as target_id, p.name as target_name, d.id as department, d.name as department_name,
              s.indicator_id, SUM(s.score) as score
       FROM score s
-      LEFT JOIN user u ON s.target_code = u.code
-      LEFT JOIN department d ON u.department_id = d.id
+      LEFT JOIN person p ON s.target_id = p.id
+      LEFT JOIN department d ON p.department = d.id
       WHERE s.year = ?
-      GROUP BY s.target_code, s.indicator_id
+      GROUP BY s.target_id, s.indicator_id
     `, [year]) as [any[], any];
     // 整理为每人一行
-    const statMap: any = {};
+    const statMap = {};
     for (const row of rows) {
-      if (!statMap[row.target_code]) {
-        statMap[row.target_code] = {
-          target_code: row.target_code,
+      if (!statMap[row.target_id]) {
+        statMap[row.target_id] = {
+          target_id: row.target_id,
           target_name: row.target_name,
-          department_id: row.department_id,
+          department: row.department,
           department_name: row.department_name,
           scores: {},
           total: 0
         };
       }
-      statMap[row.target_code].scores[row.indicator_id] = row.score;
-      statMap[row.target_code].total += row.score;
+      statMap[row.target_id].scores[row.indicator_id] = row.score;
+      statMap[row.target_id].total += row.score;
     }
     // 计算平均分
-    const result = Object.values(statMap).map((item: any) => ({
-      ...item,
-      average: Object.keys(item.scores).length
-        ? (item.total / Object.keys(item.scores).length).toFixed(2)
-        : 0
-    }));
+    const result = Object.values(statMap).map(item => {
+      const stat = item as { scores: Record<string, number>; total: number };
+      return {
+        ...stat,
+        average: Object.keys(stat.scores).length
+          ? (stat.total / Object.keys(stat.scores).length).toFixed(2)
+          : 0
+      };
+    });
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
 };
 
-export const getSelfScores: RequestHandler = async (req, res, next) => {
+export const getSelfScores = async (req, res) => {
   const { scorer_code, year } = req.query;
   if (!scorer_code || !year) {
-    res.status(400).json({ message: '参数不完整' });
-    return;
+    return res.status(400).json({ message: '参数不完整' });
   }
   try {
     const [rows] = await db.query(
       'SELECT * FROM score WHERE scorer_code = ? AND year = ?',
       [scorer_code, year]
-    ) as [any[], any];
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
@@ -196,12 +177,12 @@ export const checkFinished: RequestHandler = async (req, res, next) => {
   }
   try {
     // 获取该考核码所在部门所有被考核人和所有指标
-    const [[user]] = await db.query('SELECT department_id FROM user WHERE code = ?', [code]) as [any[], any];
-    if (!user) {
+    const [[codeRow]] = await db.query('SELECT department FROM code WHERE code = ?', [code]) as [any[], any];
+    if (!codeRow) {
       res.status(404).json({ message: '考核码不存在' });
       return;
     }
-    const [targets] = await db.query('SELECT code FROM user WHERE department_id = ? AND code != ?', [user.department_id, code]) as [any[], any];
+    const [targets] = await db.query('SELECT id FROM person WHERE department = ?', [codeRow.department]) as [any[], any];
     const [indicators] = await db.query('SELECT id FROM indicator') as [any[], any];
     const needCount = targets.length * indicators.length;
     const [scores] = await db.query(

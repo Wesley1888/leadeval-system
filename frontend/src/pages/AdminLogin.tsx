@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, message } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AdminLoginResponse {
   success: boolean;
@@ -8,26 +10,31 @@ interface AdminLoginResponse {
   token?: string;
   admin?: {
     id: number;
-    username: string;
+    name: string;
     role: string;
   };
 }
 
-interface AdminLoginProps {
-  onLogin: (data: { token: string; admin: { id: number; username: string; role: string } }) => void;
-  onBack: () => void;
-}
-
-const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
+const AdminLogin: React.FC = () => {
+  const { setAdmin } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values: { code: string; password: string }) => {
+  const onFinish = async (values: { name: string; password: string }) => {
     setLoading(true);
     try {
       const res = await axios.post<AdminLoginResponse>('http://localhost:3001/api/admin/login', values);
       if (res.data.success && res.data.token && res.data.admin) {
         message.success('登录成功');
-        onLogin({ token: res.data.token, admin: res.data.admin });
+        setAdmin({
+          token: res.data.token,
+          name: res.data.admin.name,
+          code: res.data.admin.id.toString(),
+        });
+        // 如果有重定向路径，则导航到该路径，否则导航到管理员仪表板
+        const from = location.state?.from?.pathname || '/admin/dashboard';
+        navigate(from, { replace: true });
       } else {
         message.error(res.data.message || '登录失败');
       }
@@ -43,7 +50,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
       <Card style={{ width: 350 }}>
         <h2 style={{ textAlign: 'center', marginBottom: 24 }}>管理员登录</h2>
         <Form onFinish={onFinish}>
-          <Form.Item name="code" rules={[{ required: true, message: '请输入账号' }]}> 
+          <Form.Item name="name" rules={[{ required: true, message: '请输入账号' }]}> 
             <Input placeholder="账号" autoFocus />
           </Form.Item>
           <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}> 
@@ -51,7 +58,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block loading={loading}>登录</Button>
-            <Button type="link" block onClick={onBack}>返回</Button>
+            <Button type="link" block onClick={() => navigate('/login')}>返回</Button>
           </Form.Item>
         </Form>
       </Card>

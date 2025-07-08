@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, message, Card, Modal } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
-// 用户类型
-interface User {
-  code: string;
-  name: string;
-  [key: string]: any;
-}
-
-interface LoginProps {
-  onLogin: (user: User) => void;
-}
-
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC = () => {
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState<boolean>(false);
   const [noticeVisible, setNoticeVisible] = useState<boolean>(false);
   const [helpVisible, setHelpVisible] = useState<boolean>(false);
@@ -30,7 +24,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         return;
       }
       message.success('登录成功');
-      onLogin(res.data.user);
+      setUser({ code: res.data.user.code, department: res.data.user.department });
+      // 如果有重定向路径，则导航到该路径，否则导航到评分页面
+      const from = location.state?.from?.pathname || '/score';
+      navigate(from, { replace: true });
     } catch (err: any) {
       message.error(err.response?.data?.message || '登录失败');
     } finally {
@@ -53,6 +50,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div style={{ position: 'fixed', top: 0, left: 0, padding: 16, zIndex: 1000 }}>
         <Button type="link" style={{ color: '#fff', fontWeight: 600 }} onClick={() => setNoticeVisible(true)}>考核通知</Button>
         <Button type="link" style={{ color: '#fff', fontWeight: 600 }} onClick={() => setHelpVisible(true)}>使用说明</Button>
+      </div>
+      {/* 右上角管理员登录按钮 */}
+      <div style={{ position: 'fixed', top: 0, right: 0, padding: 16, zIndex: 1000 }}>
+        <Button
+          type="default"
+          style={{ background: '#fff', color: '#1976a1', fontWeight: 600, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+          onClick={() => navigate('/admin/login')}
+        >
+          管理员登录
+        </Button>
       </div>
       <div style={{
         color: '#fff',
