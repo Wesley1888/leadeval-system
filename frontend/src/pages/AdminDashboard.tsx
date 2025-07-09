@@ -123,7 +123,16 @@ const AdminDashboard: React.FC = () => {
       <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }} styles={{ body: { padding: 0 } }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottom: '1px solid #f0f0f0', borderRadius: '12px 12px 0 0', background: '#fff' }}>
           <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1' }}>管理员：{admin!.name}（{admin!.code}）</div>
-          <Button onClick={() => { logout(); navigate('/login'); }} style={{ borderRadius: 8 }}>退出登录</Button>
+          <div>
+            <Button 
+              type="primary" 
+              onClick={() => navigate('/admin/database')} 
+              style={{ marginRight: 8, borderRadius: 8 }}
+            >
+              数据库管理
+            </Button>
+            <Button onClick={() => { logout(); navigate('/login'); }} style={{ borderRadius: 8 }}>退出登录</Button>
+          </div>
         </div>
         <div style={{ padding: 24, overflowX: 'auto' }}>
           <Tabs
