@@ -16,13 +16,6 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post<any>('http://localhost:3001/api/login', { code: values.code });
-      const year = new Date().getFullYear() + 1;
-      const check = await axios.get<{ finished: boolean }>('http://localhost:3001/api/score/finished', { params: { code: res.data.user.code, year } });
-      if (check.data.finished) {
-        message.warning('您已完成全部打分，无法再次进入。');
-        setLoading(false);
-        return;
-      }
       message.success('登录成功');
       setUser({ code: res.data.user.code, department: res.data.user.department });
       // 如果有重定向路径，则导航到该路径，否则导航到评分页面

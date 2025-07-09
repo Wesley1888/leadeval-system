@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import {
   submitScore,
   getExcellentLimit,
@@ -6,12 +6,11 @@ import {
   exportScoresExcel,
   getAllScores,
   getScoreStat,
-  getSelfScores,
-  checkFinished
+  getSelfScores
 } from '../controllers/scoreController';
 import adminAuth from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 
 router.post('/', submitScore);
 router.get('/limit', getExcellentLimit);
@@ -20,6 +19,5 @@ router.get('/export', adminAuth, exportScoresExcel);
 router.get('/all', adminAuth, getAllScores);
 router.get('/stat', adminAuth, getScoreStat);
 router.get('/self', getSelfScores);
-router.get('/finished', checkFinished);
 
 export default router; 

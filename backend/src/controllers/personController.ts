@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import db from '../db';
 
-export const getUsersByDepartment = async (req: Request, res: Response): Promise<void> => {
+export const getPersonsByDepartment = async (req: Request, res: Response): Promise<void> => {
   const { department } = req.query;
   if (!department) {
     res.status(400).json({ message: '缺少部门ID' });

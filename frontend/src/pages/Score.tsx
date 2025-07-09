@@ -48,7 +48,7 @@ const Score: React.FC = () => {
   // 获取本单位所有被考核人
   useEffect(() => {
     if (user?.department) {
-      axios.get(`http://localhost:3001/api/users?department=${user.department}`)
+      axios.get(`http://localhost:3001/api/person?department=${user.department}`)
         .then(res => setTargets((res.data as Target[])))
         .catch(() => message.error('获取被考核人失败'));
     }
@@ -133,7 +133,11 @@ const Score: React.FC = () => {
           });
         }
       }
-      message.success('打分成功');
+      
+      // 标记考核码为已使用
+      await axios.post('http://localhost:3001/api/mark-used', { code: user!.code });
+      
+      message.success('打分成功，考核码已标记为已使用');
       setScores({});
       logout();
       navigate('/login');

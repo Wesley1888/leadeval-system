@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 
 interface SubmitScoreRequest {
   scorer_code: string;
-  target_code: string;
+  target_id: number;
   indicator_id: number;
   score: number;
   year: number;
@@ -61,21 +61,19 @@ export const exportScoresExcel: RequestHandler = async (req, res, next) => {
   const { year } = req.query;
   try {
     const [rows] = await db.query(`
-      SELECT s.scorer_code, su.name AS scorer_name, s.target_code, tu.name AS target_name, s.indicator_id, i.name AS indicator_name, s.score, s.year
+      SELECT s.scorer_code, s.target_id, p.name AS target_name, s.indicator_id, i.name AS indicator_name, s.score, s.year
       FROM score s
-      LEFT JOIN user su ON s.scorer_code = su.code
-      LEFT JOIN user tu ON s.target_code = tu.code
+      LEFT JOIN person p ON s.target_id = p.id
       LEFT JOIN indicator i ON s.indicator_id = i.id
       WHERE s.year = ?
-      ORDER BY s.scorer_code, s.target_code, s.indicator_id
+      ORDER BY s.scorer_code, s.target_id, s.indicator_id
     `, [year || new Date().getFullYear() + 1]) as [any[], any];
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Scores');
     worksheet.columns = [
       { header: '打分人考核码', key: 'scorer_code', width: 15 },
-      { header: '打分人姓名', key: 'scorer_name', width: 15 },
-      { header: '被考核码', key: 'target_code', width: 15 },
+      { header: '被考核人ID', key: 'target_id', width: 15 },
       { header: '被考核人姓名', key: 'target_name', width: 15 },
       { header: '指标ID', key: 'indicator_id', width: 10 },
       { header: '指标名称', key: 'indicator_name', width: 15 },
@@ -164,32 +162,6 @@ export const getSelfScores = async (req, res) => {
       [scorer_code, year]
     );
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ message: '服务器错误' });
-  }
-};
-
-export const checkFinished: RequestHandler = async (req, res, next) => {
-  const { code, year } = req.query;
-  if (!code || !year) {
-    res.status(400).json({ message: '参数不完整' });
-    return;
-  }
-  try {
-    // 获取该考核码所在部门所有被考核人和所有指标
-    const [[codeRow]] = await db.query('SELECT department FROM code WHERE code = ?', [code]) as [any[], any];
-    if (!codeRow) {
-      res.status(404).json({ message: '考核码不存在' });
-      return;
-    }
-    const [targets] = await db.query('SELECT id FROM person WHERE department = ?', [codeRow.department]) as [any[], any];
-    const [indicators] = await db.query('SELECT id FROM indicator') as [any[], any];
-    const needCount = targets.length * indicators.length;
-    const [scores] = await db.query(
-      'SELECT COUNT(*) as cnt FROM score WHERE scorer_code = ? AND year = ?',
-      [code, year]
-    ) as [any[], any];
-    res.json({ finished: scores[0].cnt >= needCount });
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }

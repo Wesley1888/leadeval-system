@@ -1,33 +1,28 @@
-// 用户相关类型
-export interface User {
+// 人员相关类型
+export interface Person {
   id: number;
   name: string;
-  password: string;
-  role: 'user' | 'admin';
-  department: string;
-  created_at: Date;
-  updated_at: Date;
+  password?: string;
+  role?: 'user' | 'admin';
+  department: number;
 }
 
-export interface UserLoginRequest {
+export interface CodeLoginRequest {
   code: string;
 }
 
-export interface UserLoginResponse {
+export interface CodeLoginResponse {
   success: boolean;
   message: string;
   user?: {
-    id: number;
     code: string;
-    name: string;
-    department: string;
-    role: string;
+    department: number;
   };
 }
 
 // 管理员相关类型
 export interface AdminLoginRequest {
-  code: string;
+  name: string;
   password: string;
 }
 
@@ -46,27 +41,25 @@ export interface AdminLoginResponse {
 export interface Indicator {
   id: number;
   name: string;
-  description: string;
-  weight: number;
-  category: string;
+  max_score: number;
 }
 
 // 评分相关类型
 export interface Score {
   id: number;
-  user_id: number;
-  target_user_id: number;
+  scorer_code: string;
+  target_id: number;
   indicator_id: number;
   score: number;
-  comment?: string;
-  created_at: Date;
+  year: number;
 }
 
 export interface ScoreRequest {
-  targetUserId: number;
-  indicatorId: number;
+  scorer_code: string;
+  target_id: number;
+  indicator_id: number;
   score: number;
-  comment?: string;
+  year: number;
 }
 
 export interface ScoreResponse {
@@ -106,8 +99,8 @@ export interface DatabaseConfig {
 
 // JWT Token类型
 export interface JWTPayload {
-  userId: number;
-  username: string;
+  id: number;
+  name: string;
   role: string;
   iat: number;
   exp: number;
