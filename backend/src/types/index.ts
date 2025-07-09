@@ -2,9 +2,15 @@
 export interface Person {
   id: number;
   name: string;
-  password?: string;
-  role?: 'user' | 'admin';
   department: number;
+}
+
+// 管理员相关类型
+export interface Admin {
+  id: number;
+  name: string;
+  password: string;
+  role: string;
 }
 
 export interface CodeLoginRequest {

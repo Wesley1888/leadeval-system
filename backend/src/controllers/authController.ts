@@ -45,25 +45,25 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
     return;
   }
   try {
-    const [rows] = await db.query('SELECT * FROM person WHERE name = ? AND role = "admin"', [name]) as [any[], any];
+    const [rows] = await db.query('SELECT * FROM admin WHERE name = ?', [name]) as [any[], any];
     if (rows.length === 0) {
-      res.status(401).json({ success: false, message: '账号不存在或不是管理员' });
+      res.status(401).json({ success: false, message: '账号不存在' });
       return;
     }
-    const person = rows[0];
-    if (person.password !== password) {
+    const admin = rows[0];
+    if (admin.password !== password) {
       res.status(401).json({ success: false, message: '密码错误' });
       return;
     }
-    const token = jwt.sign({ id: person.id, role: person.role }, SECRET, { expiresIn: '2h' });
+    const token = jwt.sign({ id: admin.id, role: admin.role }, SECRET, { expiresIn: '2h' });
     res.json({
       success: true,
       message: '登录成功',
       token,
       admin: {
-        id: person.id,
-        name: person.name,
-        role: person.role
+        id: admin.id,
+        name: admin.name,
+        role: admin.role
       }
     });
   } catch (err) {
