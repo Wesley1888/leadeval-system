@@ -30,10 +30,12 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'detail' | 'stat'>('detail');
 
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get<ScoreDetail[]>('http://localhost:3001/api/score/all', {
+      const res = await axios.get<ScoreDetail[]>(`${API_BASE}/api/score/all`, {
         headers: { Authorization: `Bearer ${admin!.token}` },
         params: { year: new Date().getFullYear() + 1 }
       });
@@ -48,7 +50,7 @@ const AdminDashboard: React.FC = () => {
   const fetchStat = async () => {
     setLoading(true);
     try {
-      const res = await axios.get<StatRow[]>('http://localhost:3001/api/score/stat', {
+      const res = await axios.get<StatRow[]>(`${API_BASE}/api/score/stat`, {
         headers: { Authorization: `Bearer ${admin!.token}` },
         params: { year: new Date().getFullYear() + 1 }
       });
@@ -69,7 +71,7 @@ const AdminDashboard: React.FC = () => {
   const handleExport = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3001/api/score/export?year=${new Date().getFullYear() + 1}`,
+        `${API_BASE}/api/score/export?year=${new Date().getFullYear() + 1}`,
         {
           headers: { Authorization: `Bearer ${admin!.token}` },
           responseType: 'blob'

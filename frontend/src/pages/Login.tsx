@@ -12,10 +12,12 @@ const Login: React.FC = () => {
   const [noticeVisible, setNoticeVisible] = useState<boolean>(false);
   const [helpVisible, setHelpVisible] = useState<boolean>(false);
 
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+
   const onFinish = async (values: { code: string }) => {
     setLoading(true);
     try {
-      const res = await axios.post<any>('http://localhost:3001/api/login', { code: values.code });
+      const res = await axios.post<any>(`${API_BASE}/api/login`, { code: values.code });
       message.success('登录成功');
       setUser({ code: res.data.user.code, department: res.data.user.department });
       // 如果有重定向路径，则导航到该路径，否则导航到评分页面

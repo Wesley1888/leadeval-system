@@ -24,7 +24,8 @@ const AdminLogin: React.FC = () => {
   const onFinish = async (values: { name: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await axios.post<AdminLoginResponse>('http://localhost:3001/api/admin/login', values);
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const res = await axios.post<AdminLoginResponse>(`${API_BASE}/api/admin/login`, values);
       if (res.data.success && res.data.token && res.data.admin) {
         message.success('登录成功');
         setAdmin({

@@ -29,6 +29,7 @@ type TooltipOpenMap = {
 };
 
 const fixedScores = [10, 8, 6, 5];
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
 const Score: React.FC = () => {
   const { user, logout } = useAuth();
@@ -48,7 +49,7 @@ const Score: React.FC = () => {
   // 获取本单位所有被考核人
   useEffect(() => {
     if (user?.department) {
-      axios.get(`http://localhost:3001/api/person?department=${user.department}`)
+      axios.get(`${API_BASE}/api/person?department=${user.department}`)
         .then(res => setTargets((res.data as Target[])))
         .catch(() => message.error('获取被考核人失败'));
     }
@@ -56,14 +57,14 @@ const Score: React.FC = () => {
 
   // 获取考核指标
   useEffect(() => {
-    axios.get('http://localhost:3001/api/indicators')
+    axios.get(`${API_BASE}/api/indicators`)
       .then(res => setIndicators(res.data))
       .catch(() => message.error('获取考核指标失败'));
   }, []);
 
   // 获取优秀分数线和允许人数
   useEffect(() => {
-    axios.get('http://localhost:3001/api/score/limit')
+    axios.get(`${API_BASE}/api/score/limit`)
       .then(res => setExcellentLimit(res.data))
       .catch(() => {});
   }, []);
@@ -87,7 +88,7 @@ const Score: React.FC = () => {
   // 加载已保存分数
   useEffect(() => {
     if (user?.code && indicators.length && targets.length) {
-      axios.get('http://localhost:3001/api/score/self', {
+      axios.get(`${API_BASE}/api/score/self`, {
         params: { scorer_code: user.code, year: new Date().getFullYear() + 1 }
       }).then(res => {
         const map: ScoresMap = {};
@@ -124,7 +125,7 @@ const Score: React.FC = () => {
         for (const indicator of indicators) {
           const score = scores[target.id]?.[indicator.id];
           if (score == null) continue;
-          await axios.post('http://localhost:3001/api/score', {
+          await axios.post(`${API_BASE}/api/score`, {
             scorer_code: user!.code,
             target_id: target.id,
             indicator_id: indicator.id,
@@ -135,7 +136,7 @@ const Score: React.FC = () => {
       }
       
       // 标记考核码为已使用
-      await axios.post('http://localhost:3001/api/mark-used', { code: user!.code });
+      await axios.post(`${API_BASE}/api/mark-used`, { code: user!.code });
       
       message.success('打分成功，考核码已标记为已使用');
       setScores({});
@@ -156,7 +157,7 @@ const Score: React.FC = () => {
         for (const indicator of indicators) {
           const score = scores[target.id]?.[indicator.id];
           if (score == null) continue;
-          await axios.post('http://localhost:3001/api/score', {
+          await axios.post(`${API_BASE}/api/score`, {
             scorer_code: user!.code,
             target_id: target.id,
             indicator_id: indicator.id,

@@ -44,7 +44,7 @@ export const executeSql = async (req: Request<{}, {}, ExecuteSqlRequest>, res: R
     const [rows] = await db.query(sql) as [any[], any];
     
     // 如果是 SELECT 查询
-    if (upperSql.trim().startsWith('SELECT')) {
+    if (sql.trim().toUpperCase().startsWith('SELECT')) {
       if (Array.isArray(rows) && rows.length > 0) {
         const columns = Object.keys(rows[0]);
         res.json({

@@ -46,7 +46,8 @@ const DatabaseManager: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3001/api/admin/execute-sql', {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const response = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
         sql: sql.trim()
       }, {
         headers: {
