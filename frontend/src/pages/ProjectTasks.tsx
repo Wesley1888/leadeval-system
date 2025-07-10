@@ -157,12 +157,14 @@ const ProjectTasks: React.FC = () => {
   };
   
   const handleEditSave = async () => {
-    if (!editTask.title || !editTask.owner || !editTask.status) {
+    if (!editTask.title || !editTask.status) {
       message.warning('请填写完整信息');
       return;
     }
     try {
-      await axios.post(`${API_BASE}/api/task/update`, editTask, {
+      // 编辑保存时，负责人改为当前编辑的管理员
+      const updatedTask = { ...editTask, owner: admin!.name };
+      await axios.post(`${API_BASE}/api/task/update`, updatedTask, {
         headers: { Authorization: `Bearer ${admin!.token}` }
       });
       message.success('修改成功');
@@ -346,43 +348,7 @@ const ProjectTasks: React.FC = () => {
                 whiteSpace: 'nowrap' 
               }} title={text}>{text}</span>;
             } },
-            { title: '负责人', dataIndex: 'owner', width: 100, fixed: false, render: (text, record: any) => {
-              if (record.id === 'new') {
-                return <div style={{ display: 'flex', alignItems: 'center', height: 40 }}>
-                  <Select
-                    value={newTask.owner}
-                    onChange={v => handleAddChange('owner', v)}
-                    options={adminOptions.map(a => ({ value: a.name, label: a.name }))}
-                    style={{ width: '100%', height: 40, fontSize: 16 }}
-                    size="middle"
-                    showSearch
-                    placeholder="请选择负责人"
-                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-                  />
-                </div>;
-              }
-              if (editingId === record.id) {
-                return <div style={{ display: 'flex', alignItems: 'center', height: 40 }}>
-                  <Select 
-                    value={editTask.owner} 
-                    onChange={v => handleEditChange('owner', v)} 
-                    options={adminOptions.map(a => ({ value: a.name, label: a.name }))} 
-                    style={{ width: '100%', height: 40, fontSize: 16 }}
-                    size="middle"
-                    showSearch 
-                    placeholder="请选择负责人" 
-                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} 
-                  />
-                </div>;
-              }
-              return <span className="project-task-cell" style={{ 
-                display: 'block', 
-                width: '100%', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap' 
-              }} title={text}>{text}</span>;
-            } },
+
             { title: '状态', dataIndex: 'status', width: 120, fixed: false, render: (text, record: any) => {
               if (record.id === 'new') {
                 return <div style={{ display: 'flex', alignItems: 'center', height: 40 }}>
@@ -425,11 +391,42 @@ const ProjectTasks: React.FC = () => {
                 whiteSpace: 'nowrap' 
               }} title={text}>{text}</span>;
             } },
-            { title: '最后编辑', dataIndex: 'updated_at', width: 160, fixed: false, render: (text, record: any) => {
+            { title: '最后编辑', dataIndex: 'updated_at', width: 200, fixed: false, render: (text, record: any) => {
               if (record.id === 'new') {
                 return <span style={{ color: '#999' }}>保存后显示</span>;
               }
-              return <span className="project-task-cell">{formatTime(text)}</span>;
+              // 根据管理员名称分配不同颜色
+              const getOwnerColor = (owner: string) => {
+                const colors = ['blue', 'green', 'orange', 'purple', 'cyan', 'magenta', 'red', 'volcano', 'gold', 'lime'];
+                // 取前三个字母，如果不够三个字母就用所有字母
+                const key = owner.length >= 3 ? owner.substring(0, 3) : owner;
+                // 计算字符串的哈希值
+                let hash = 0;
+                for (let i = 0; i < key.length; i++) {
+                  hash = ((hash << 5) - hash) + key.charCodeAt(i);
+                  hash = hash & hash; // 转换为32位整数
+                }
+                const index = Math.abs(hash) % colors.length;
+                return colors[index];
+              };
+
+              return (
+                <div className="project-task-cell" style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 8,
+                  width: '100%',
+                  overflow: 'hidden'
+                }}>
+                  <span style={{ 
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>{formatTime(text)}</span>
+                  <Tag color={getOwnerColor(record.owner)} style={{ flexShrink: 0 }}>{record.owner}</Tag>
+                </div>
+              );
             } },
             {
               title: '操作',
