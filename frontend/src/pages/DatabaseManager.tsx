@@ -3,7 +3,7 @@ import { Card, Input, Button, message, Table, Space, Modal, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { DashboardOutlined, LogoutOutlined } from '@ant-design/icons';
+import { DashboardOutlined, LogoutOutlined, ReloadOutlined } from '@ant-design/icons';
 import mermaid from 'mermaid';
 
 const { TextArea } = Input;
@@ -14,6 +14,8 @@ interface QueryResult {
   affectedRows?: number;
   message?: string;
 }
+
+const ER_CACHE_KEY = 'db_er_diagram_cache_v1';
 
 const DatabaseManager: React.FC = () => {
   const { admin, logout } = useAuth();
@@ -29,7 +31,10 @@ const DatabaseManager: React.FC = () => {
 
   // 新增：多条SQL结果状态
   const [multiResults, setMultiResults] = useState<{ sql: string, result: QueryResult }[]>([]);
-  const [erDiagram, setErDiagram] = useState<string>('');
+  const [erDiagram, setErDiagram] = useState<string>(() => {
+    // 初始值优先从localStorage读取
+    return localStorage.getItem(ER_CACHE_KEY) || '';
+  });
   const [erLoading, setErLoading] = useState(false);
 
   useEffect(() => {
@@ -101,17 +106,13 @@ const DatabaseManager: React.FC = () => {
         }
       }
       setErDiagram(er);
+      localStorage.setItem(ER_CACHE_KEY, er); // 缓存到localStorage
     } finally {
       setErLoading(false);
     }
   };
 
-  // 保证 useEffect 在组件顶层调用
-  useEffect(() => {
-    if (!admin) return;
-    generateERDiagram();
-  }, [admin]);
-
+  // 页面挂载时只渲染缓存，不自动请求数据库
   useEffect(() => {
     if (erDiagram) {
       setTimeout(() => { mermaid.init(undefined, '.mermaid'); }, 0);
@@ -267,7 +268,16 @@ const DatabaseManager: React.FC = () => {
         >
           
           {/* 新增：数据库ER结构图 */}
-          <Card title="数据库ER结构图" style={{ marginBottom: 24 }} loading={erLoading}>
+          <Card 
+            title="数据库ER结构图" 
+            style={{ marginBottom: 24 }} 
+            loading={erLoading}
+            extra={
+              <Button icon={<ReloadOutlined />} onClick={generateERDiagram} loading={erLoading}>
+                刷新ER结构图
+              </Button>
+            }
+          >
             <div className="mermaid">{erDiagram}</div>
           </Card>
           <Alert
