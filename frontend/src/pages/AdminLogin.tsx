@@ -34,7 +34,6 @@ const AdminLogin: React.FC = () => {
         const adminData = {
           token: res.data.token,
           name: res.data.admin.name,
-          code: res.data.admin.id.toString(),
         };
         setAdmin(adminData);
         

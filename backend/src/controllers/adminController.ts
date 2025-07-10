@@ -100,7 +100,7 @@ export const executeSql = async (req: Request<{}, {}, ExecuteSqlRequest>, res: R
 
 export const getAllAdmins = async (req: Request, res: Response): Promise<void> => {
   try {
-    const [rows] = await db.query('SELECT id, name, role FROM admin') as [any[], any];
+    const [rows] = await db.query('SELECT name, role FROM admin') as [any[], any];
     res.json({ success: true, admins: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: '服务器错误' });

@@ -141,7 +141,7 @@ const AdminDashboard: React.FC = () => {
     }}>
       <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottom: '1px solid #f0f0f0', borderRadius: '12px 12px 0 0', background: '#fff' }}>
-          <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1' }}>管理员：{admin!.name}（{admin!.code}）</div>
+          <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1', marginRight: 16 }}>管理员：<span style={{ marginLeft: 8 }}>{admin!.name}</span></div>
           <div>
             <Button 
               type="primary" 

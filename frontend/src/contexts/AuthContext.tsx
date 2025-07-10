@@ -10,7 +10,6 @@ export interface User {
 export interface Admin {
   token: string;
   name: string;
-  code: string;
 }
 
 // 认证上下文类型

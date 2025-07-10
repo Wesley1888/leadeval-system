@@ -103,9 +103,9 @@ const DatabaseManager: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>数据库管理</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14, color: '#666' }}>
-                  管理员：{admin.name}（{admin.code}）
-                </span>
+                              <span style={{ fontSize: 14, color: '#666', marginRight: 16 }}>
+                管理员：<span style={{ marginLeft: 8 }}>{admin.name}</span>
+              </span>
               </div>
             </div>
           } 
