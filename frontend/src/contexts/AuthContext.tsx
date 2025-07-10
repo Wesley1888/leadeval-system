@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 // 用户类型
 export interface User {
   code: string;
-  department: number;
+  department_id: number;
 }
 
 // 管理员类型

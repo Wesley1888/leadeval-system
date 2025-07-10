@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Input, Button, message, Table, Space, Modal, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardOutlined, LogoutOutlined } from '@ant-design/icons';
+import mermaid from 'mermaid';
 
 const { TextArea } = Input;
 
@@ -21,6 +22,101 @@ const DatabaseManager: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<QueryResult | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [tables, setTables] = useState<string[]>([]);
+  const [tableStructure, setTableStructure] = useState<QueryResult | null>(null);
+  const [tableData, setTableData] = useState<QueryResult | null>(null);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+
+  // 新增：多条SQL结果状态
+  const [multiResults, setMultiResults] = useState<{ sql: string, result: QueryResult }[]>([]);
+  const [erDiagram, setErDiagram] = useState<string>('');
+  const [erLoading, setErLoading] = useState(false);
+
+  useEffect(() => {
+    if (!admin) return;
+    // 获取所有表名
+    const fetchTables = async () => {
+      try {
+        const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+        const response = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
+          sql: 'SHOW TABLES'
+        }, {
+          headers: {
+            'Authorization': `Bearer ${admin.token}`
+          }
+        });
+        if (response.data && response.data.data) {
+          // 兼容不同数据库返回格式
+          const tableNames = response.data.data.map((row: any) => Object.values(row)[0]);
+          setTables(tableNames);
+        }
+      } catch (e) {
+        setTables([]);
+      }
+    };
+    fetchTables();
+  }, [admin]);
+
+  // 获取所有表结构并生成ER图
+  const generateERDiagram = async () => {
+    if (!admin) return;
+    setErLoading(true);
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      // 获取所有表名
+      const tablesRes = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
+        sql: 'SHOW TABLES'
+      }, {
+        headers: { 'Authorization': `Bearer ${admin.token}` }
+      });
+      const tableNames = tablesRes.data.data.map((row: any) => Object.values(row)[0]);
+      // 获取每个表的字段
+      const tableFields: Record<string, any[]> = {};
+      for (const table of tableNames) {
+        const descRes = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
+          sql: `DESCRIBE \`${table}\``
+        }, {
+          headers: { 'Authorization': `Bearer ${admin.token}` }
+        });
+        tableFields[table] = descRes.data.data;
+      }
+      // 生成mermaid ER图代码
+      let er = 'erDiagram\n';
+      for (const table of tableNames) {
+        er += `  ${table} {\n`;
+        for (const col of tableFields[table]) {
+          er += `    ${col.Type} ${col.Field}\n`;
+        }
+        er += '  }\n';
+      }
+      // 简单外键推断（如字段名为 xxx_id 且指向其他表主键）
+      for (const table of tableNames) {
+        for (const col of tableFields[table]) {
+          if (col.Field.endsWith('_id')) {
+            const refTable = tableNames.find((t: string) => t !== table && col.Field.startsWith(t.slice(0, -1))); // 粗略推断
+            if (refTable) {
+              er += `  ${table} }o--|| ${refTable} : 关联\n`;
+            }
+          }
+        }
+      }
+      setErDiagram(er);
+    } finally {
+      setErLoading(false);
+    }
+  };
+
+  // 保证 useEffect 在组件顶层调用
+  useEffect(() => {
+    if (!admin) return;
+    generateERDiagram();
+  }, [admin]);
+
+  useEffect(() => {
+    if (erDiagram) {
+      setTimeout(() => { mermaid.init(undefined, '.mermaid'); }, 0);
+    }
+  }, [erDiagram]);
 
   // 检查是否为管理员
   if (!admin) {
@@ -40,38 +136,48 @@ const DatabaseManager: React.FC = () => {
   }
 
   const handleExecute = async () => {
+    if (!admin) return;
     if (!sql.trim()) {
       message.warning('请输入 SQL 语句');
       return;
     }
 
-    setLoading(true);
-    try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
-      const response = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
-        sql: sql.trim()
-      }, {
-        headers: {
-          'Authorization': `Bearer ${admin.token}`
-        }
-      });
+    // 分割多条SQL，去除空白
+    const sqlList = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+    if (sqlList.length === 0) {
+      message.warning('请输入有效的 SQL 语句');
+      return;
+    }
 
-      const data = response.data;
-      setResult(data);
-      
+    setLoading(true);
+    const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+    const allResults: { sql: string, result: QueryResult }[] = [];
+    try {
+      for (let singleSql of sqlList) {
+        try {
+          const response = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
+            sql: singleSql
+          }, {
+            headers: {
+              'Authorization': `Bearer ${admin.token}`
+            }
+          });
+          allResults.push({ sql: singleSql, result: response.data });
+        } catch (error: any) {
+          allResults.push({ sql: singleSql, result: {
+            columns: [],
+            data: [],
+            message: error.response?.data?.message || '执行失败'
+          }});
+        }
+      }
+      setResult(null); // 清空旧结果
+      setMultiResults(allResults); // 新增：存储多条结果
       // 添加到历史记录
       if (!history.includes(sql.trim())) {
         setHistory(prev => [sql.trim(), ...prev.slice(0, 9)]); // 保留最近10条
       }
-      
-      message.success('SQL 执行成功');
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'SQL 执行失败');
-      setResult({
-        columns: [],
-        data: [],
-        message: error.response?.data?.message || '执行失败'
-      });
+      message.success('SQL 执行完成');
     } finally {
       setLoading(false);
     }
@@ -93,6 +199,36 @@ const DatabaseManager: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleTableClick = async (table: string) => {
+    if (!admin) return;
+    setSelectedTable(table);
+    setTableStructure(null);
+    setTableData(null);
+    setLoading(true);
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      // 查询表结构
+      const structureRes = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
+        sql: `DESCRIBE \`${table}\``
+      }, {
+        headers: { 'Authorization': `Bearer ${admin.token}` }
+      });
+      setTableStructure(structureRes.data);
+      // 查询表数据
+      const dataRes = await axios.post(`${API_BASE}/api/admin/execute-sql`, {
+        sql: `SELECT * FROM \`${table}\` LIMIT 100`
+      }, {
+        headers: { 'Authorization': `Bearer ${admin.token}` }
+      });
+      setTableData(dataRes.data);
+    } catch (e) {
+      setTableStructure(null);
+      setTableData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,6 +265,11 @@ const DatabaseManager: React.FC = () => {
           } 
           style={{ marginBottom: 24 }}
         >
+          
+          {/* 新增：数据库ER结构图 */}
+          <Card title="数据库ER结构图" style={{ marginBottom: 24 }} loading={erLoading}>
+            <div className="mermaid">{erDiagram}</div>
+          </Card>
           <Alert
             message="⚠️ 安全提醒"
             description="此功能允许执行任意 SQL 语句，请谨慎操作。建议在执行前备份数据库。"
@@ -142,7 +283,7 @@ const DatabaseManager: React.FC = () => {
               rows={6}
               value={sql}
               onChange={(e) => setSql(e.target.value)}
-              placeholder="请输入 SQL 语句，例如：SELECT * FROM user LIMIT 10;"
+              placeholder="请输入 SQL 语句，例如：SELECT * FROM user LIMIT 10; INSERT INTO user (name, age) VALUES ('Alice', 25);"
               style={{ fontFamily: 'monospace' }}
             />
           </div>
@@ -172,30 +313,49 @@ const DatabaseManager: React.FC = () => {
               </Space>
             </div>
           )}
+
+          {/* 新增：表名列表 */}
+          {tables.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <b>所有表：</b>
+              <Space wrap>
+                {tables.map(table => (
+                  <Button
+                    key={table}
+                    size="small"
+                    type={selectedTable === table ? 'primary' : 'default'}
+                    onClick={() => handleTableClick(table)}
+                  >
+                    {table}
+                  </Button>
+                ))}
+              </Space>
+            </div>
+          )}
         </Card>
 
         {/* 结果显示 */}
-        {result && (
-          <Card title="执行结果">
-            {result.message && (
+        {multiResults.length > 0 && multiResults.map((item, idx) => (
+          <Card key={idx} title={`SQL ${idx + 1}: ${item.sql}`}>
+            {item.result.message && (
               <Alert
-                message={result.message}
-                type={result.message.includes('失败') ? 'error' : 'success'}
+                message={item.result.message}
+                type={item.result.message.includes('失败') ? 'error' : 'success'}
                 style={{ marginBottom: 16 }}
               />
             )}
             
-            {result.affectedRows !== undefined && (
+            {item.result.affectedRows !== undefined && (
               <Alert
-                message={`影响行数：${result.affectedRows}`}
+                message={`影响行数：${item.result.affectedRows}`}
                 type="info"
                 style={{ marginBottom: 16 }}
               />
             )}
 
-            {result.data && result.data.length > 0 && (
+            {item.result.data && item.result.data.length > 0 && (
               <Table
-                columns={result.columns.map(col => ({
+                columns={item.result.columns.map(col => ({
                   title: col,
                   dataIndex: col,
                   key: col,
@@ -209,7 +369,7 @@ const DatabaseManager: React.FC = () => {
                     return String(text);
                   }
                 }))}
-                dataSource={result.data.map((row, index) => ({
+                dataSource={item.result.data.map((row, index) => ({
                   key: index,
                   ...row
                 }))}
@@ -224,6 +384,50 @@ const DatabaseManager: React.FC = () => {
               />
             )}
           </Card>
+        ))}
+
+        {/* 新增：表结构和数据展示 */}
+        {selectedTable && (
+          <div style={{ marginBottom: 24 }}>
+            <h4>表结构（{selectedTable}）：</h4>
+            {tableStructure && tableStructure.data && tableStructure.data.length > 0 ? (
+              <Table
+                columns={tableStructure.columns.map(col => ({
+                  title: col,
+                  dataIndex: col,
+                  key: col
+                }))}
+                dataSource={tableStructure.data.map((row, idx) => ({ key: idx, ...row }))}
+                pagination={false}
+                size="small"
+                scroll={{ x: 'max-content' }}
+                style={{ marginBottom: 16 }}
+              />
+            ) : <span style={{ color: '#999' }}>无结构信息</span>}
+            <h4>表数据（前100行）：</h4>
+            {tableData && tableData.data && tableData.data.length > 0 ? (
+              <Table
+                columns={tableData.columns.map(col => ({
+                  title: col,
+                  dataIndex: col,
+                  key: col,
+                  render: (text: any) => {
+                    if (text === null || text === undefined) {
+                      return <span style={{ color: '#999' }}>NULL</span>;
+                    }
+                    if (typeof text === 'object') {
+                      return JSON.stringify(text);
+                    }
+                    return String(text);
+                  }
+                }))}
+                dataSource={tableData.data.map((row, idx) => ({ key: idx, ...row }))}
+                pagination={{ pageSize: 20 }}
+                scroll={{ x: 'max-content' }}
+                size="small"
+              />
+            ) : <span style={{ color: '#999' }}>无数据</span>}
+          </div>
         )}
       </div>
     </div>

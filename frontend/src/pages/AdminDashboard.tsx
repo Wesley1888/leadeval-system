@@ -6,17 +6,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { LogoutOutlined } from '@ant-design/icons';
 
 interface ScoreDetail {
-  scorer_code: string;
-  target_id: number;
+  code_id: string;
+  person_id: number;
   indicator_id: number;
   score: number;
   year: number;
 }
 
 interface StatRow {
-  target_id: number;
-  target_name: string;
-  department: number;
+  person_id: number;
+  person_name: string;
+  department_id: number;
   department_name: string;
   scores: Record<string, number>;
   total: number;
@@ -109,8 +109,8 @@ const AdminDashboard: React.FC = () => {
   };
 
   const detailColumns = [
-    { title: '打分人考核码', dataIndex: 'scorer_code', key: 'scorer_code' },
-    { title: '被考核人ID', dataIndex: 'target_id', key: 'target_id' },
+    { title: '打分人考核码', dataIndex: 'code_id', key: 'code_id' },
+    { title: '被考核人ID', dataIndex: 'person_id', key: 'person_id' },
     { title: '指标ID', dataIndex: 'indicator_id', key: 'indicator_id' },
     { title: '分数', dataIndex: 'score', key: 'score' },
     { title: '年份', dataIndex: 'year', key: 'year' }
@@ -119,8 +119,8 @@ const AdminDashboard: React.FC = () => {
   // 动态生成统计表头
   const indicatorIds = stat.length ? Object.keys(stat[0].scores) : [];
   const statColumns = [
-    { title: '被考核人ID', dataIndex: 'target_id', key: 'target_id' },
-    { title: '姓名', dataIndex: 'target_name', key: 'target_name' },
+    { title: '被考核人ID', dataIndex: 'person_id', key: 'person_id' },
+    { title: '姓名', dataIndex: 'person_name', key: 'person_name' },
     { title: '部门', dataIndex: 'department_name', key: 'department_name' },
     ...indicatorIds.map(id => ({ title: `指标${id}`, dataIndex: ['scores', id], key: id })),
     { title: '总分', dataIndex: 'total', key: 'total' },
@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
               {
                 key: 'stat',
                 label: '打分统计',
-                children: <Table columns={statColumns} dataSource={stat} rowKey={r => r.target_id} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
+                children: <Table columns={statColumns} dataSource={stat} rowKey={r => r.person_id} loading={loading} bordered scroll={{ x: '100%' }} size="middle" style={{ minWidth: 600 }} />
               }
             ]}
           />

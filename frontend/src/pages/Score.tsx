@@ -48,8 +48,8 @@ const Score: React.FC = () => {
 
   // 获取本单位所有被考核人
   useEffect(() => {
-    if (user?.department) {
-      axios.get(`${API_BASE}/api/person?department=${user.department}`)
+    if (user?.department_id) {
+      axios.get(`${API_BASE}/api/person?department_id=${user.department_id}`)
         .then(res => setTargets((res.data as Target[])))
         .catch(() => message.error('获取被考核人失败'));
     }
@@ -89,12 +89,12 @@ const Score: React.FC = () => {
   useEffect(() => {
     if (user?.code && indicators.length && targets.length) {
       axios.get(`${API_BASE}/api/score/self`, {
-        params: { scorer_code: user.code, year: new Date().getFullYear() + 1 }
+        params: { code_id: user.code, year: new Date().getFullYear() + 1 }
       }).then(res => {
         const map: ScoresMap = {};
         for (const row of res.data as any[]) {
-          if (!map[row.target_id]) map[row.target_id] = {};
-          map[row.target_id][row.indicator_id] = row.score;
+          if (!map[row.person_id]) map[row.person_id] = {};
+          map[row.person_id][row.indicator_id] = row.score;
         }
         setScores(map);
       });
@@ -126,8 +126,8 @@ const Score: React.FC = () => {
           const score = scores[target.id]?.[indicator.id];
           if (score == null) continue;
           await axios.post(`${API_BASE}/api/score`, {
-            scorer_code: user!.code,
-            target_id: target.id,
+            code_id: user!.code,
+            person_id: target.id,
             indicator_id: indicator.id,
             score,
             year: new Date().getFullYear() + 1 // 例如2025
@@ -158,8 +158,8 @@ const Score: React.FC = () => {
           const score = scores[target.id]?.[indicator.id];
           if (score == null) continue;
           await axios.post(`${API_BASE}/api/score`, {
-            scorer_code: user!.code,
-            target_id: target.id,
+            code_id: user!.code,
+            person_id: target.id,
             indicator_id: indicator.id,
             score,
             year: new Date().getFullYear() + 1

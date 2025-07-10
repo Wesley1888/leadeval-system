@@ -12,7 +12,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     return;
   }
   try {
-    const [rows] = await db.query('SELECT * FROM code WHERE code = ?', [code]) as [any[], any];
+    const [rows] = await db.query('SELECT * FROM code WHERE id = ?', [code]) as [any[], any];
     if (rows.length === 0) {
       res.status(401).json({ success: false, message: '考核码不存在' });
       return;
@@ -29,8 +29,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       success: true,
       message: '登录成功',
       user: {
-        code: codeRow.code,
-        department: codeRow.department
+        code: codeRow.id,
+        department_id: codeRow.department_id
       }
     });
   } catch (err) {
@@ -78,7 +78,7 @@ export const markCodeAsUsed = async (req: Request, res: Response): Promise<void>
     return;
   }
   try {
-    const [result] = await db.query('UPDATE code SET used = 1 WHERE code = ?', [code]) as [any, any];
+    const [result] = await db.query('UPDATE code SET used = 1 WHERE id = ?', [code]) as [any, any];
     if (result.affectedRows === 0) {
       res.status(404).json({ success: false, message: '考核码不存在' });
       return;

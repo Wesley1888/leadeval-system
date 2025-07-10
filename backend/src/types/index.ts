@@ -2,7 +2,7 @@
 export interface Person {
   id: number;
   name: string;
-  department: number;
+  department_id: number;
 }
 
 // 管理员相关类型
@@ -22,7 +22,7 @@ export interface CodeLoginResponse {
   message: string;
   user?: {
     code: string;
-    department: number;
+    department_id: number;
   };
 }
 
@@ -53,16 +53,16 @@ export interface Indicator {
 // 评分相关类型
 export interface Score {
   id: number;
-  scorer_code: string;
-  target_id: number;
+  code_id: string;
+  person_id: number;
   indicator_id: number;
   score: number;
   year: number;
 }
 
 export interface ScoreRequest {
-  scorer_code: string;
-  target_id: number;
+  code_id: string;
+  person_id: number;
   indicator_id: number;
   score: number;
   year: number;
@@ -83,7 +83,7 @@ export interface ScoreStatistics {
 }
 
 export interface DepartmentStat {
-  department: string;
+  department_id: string;
   averageScore: number;
   totalUsers: number;
 }
