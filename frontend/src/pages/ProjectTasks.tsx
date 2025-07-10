@@ -114,7 +114,7 @@ const ProjectTasks: React.FC = () => {
     setNewTask({
       title: '',
       owner: admin?.name || '',
-      status: '',
+      status: '未开始',
       desc: ''
     });
   };
@@ -251,7 +251,6 @@ const ProjectTasks: React.FC = () => {
   font-size: 16px !important;
   display: flex !important;
   align-items: center;
-  margin-top: -7px;
 }
 .project-task-table .ant-btn {
   padding-top: 0;
@@ -308,7 +307,7 @@ const ProjectTasks: React.FC = () => {
             type="primary"
             icon={<PlusOutlined />}
             onClick={handleAdd}
-            disabled={adding || adminOptions.length === 0}
+            disabled={adding || editingId !== null || adminOptions.length === 0}
             style={{ height: 40, fontSize: 16 }}
           >
             新建任务
@@ -363,7 +362,18 @@ const ProjectTasks: React.FC = () => {
                 </div>;
               }
               if (editingId === record.id) {
-                return <Select value={editTask.owner} onChange={v => handleEditChange('owner', v)} options={adminOptions.map(a => ({ value: a.name, label: a.name }))} style={{ width: '100%' }} size="small" showSearch placeholder="请选择负责人" filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />;
+                return <div style={{ display: 'flex', alignItems: 'center', height: 40 }}>
+                  <Select 
+                    value={editTask.owner} 
+                    onChange={v => handleEditChange('owner', v)} 
+                    options={adminOptions.map(a => ({ value: a.name, label: a.name }))} 
+                    style={{ width: '100%', height: 40, fontSize: 16 }}
+                    size="middle"
+                    showSearch 
+                    placeholder="请选择负责人" 
+                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} 
+                  />
+                </div>;
               }
               return <span className="project-task-cell" style={{ 
                 display: 'block', 
@@ -375,10 +385,28 @@ const ProjectTasks: React.FC = () => {
             } },
             { title: '状态', dataIndex: 'status', width: 120, fixed: false, render: (text, record: any) => {
               if (record.id === 'new') {
-                return <Select value={newTask.status} onChange={v => handleAddChange('status', v)} options={statusOptions} style={{ width: '100%' }} size="small" placeholder="请选择状态" />;
+                return <div style={{ display: 'flex', alignItems: 'center', height: 40 }}>
+                  <Select 
+                    value={newTask.status} 
+                    onChange={v => handleAddChange('status', v)} 
+                    options={statusOptions} 
+                    style={{ width: '100%', height: 40, fontSize: 16 }}
+                    size="middle"
+                    placeholder="请选择状态" 
+                  />
+                </div>;
               }
               if (editingId === record.id) {
-                return <Select value={editTask.status} onChange={v => handleEditChange('status', v)} options={statusOptions} style={{ width: '100%' }} size="small" placeholder="请选择状态" />;
+                return <div style={{ display: 'flex', alignItems: 'center', height: 40 }}>
+                  <Select 
+                    value={editTask.status} 
+                    onChange={v => handleEditChange('status', v)} 
+                    options={statusOptions} 
+                    style={{ width: '100%', height: 40, fontSize: 16 }}
+                    size="middle"
+                    placeholder="请选择状态" 
+                  />
+                </div>;
               }
               return <div className="project-task-cell"><Tag color={statusColors[text] || 'default'}>{text}</Tag></div>;
             } },
