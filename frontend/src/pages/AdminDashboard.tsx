@@ -3,6 +3,7 @@ import { Table, Button, message, Tabs, Card } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { LogoutOutlined } from '@ant-design/icons';
 
 interface ScoreDetail {
   scorer_code: string;
@@ -40,7 +41,7 @@ const AdminDashboard: React.FC = () => {
         params: { year: new Date().getFullYear() + 1 }
       });
       setData(res.data);
-    } catch {
+    } catch (error) {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
@@ -55,7 +56,7 @@ const AdminDashboard: React.FC = () => {
         params: { year: new Date().getFullYear() + 1 }
       });
       setStat(res.data);
-    } catch {
+    } catch (error) {
       message.error('获取统计失败');
     } finally {
       setLoading(false);
@@ -63,8 +64,12 @@ const AdminDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'detail') fetchData();
-    if (activeTab === 'stat') fetchStat();
+    if (activeTab === 'detail') {
+      fetchData();
+    }
+    if (activeTab === 'stat') {
+      fetchStat();
+    }
     // eslint-disable-next-line
   }, [activeTab]);
 
@@ -85,9 +90,22 @@ const AdminDashboard: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch {
+    } catch (error) {
       message.error('导出失败');
     }
+  };
+
+  const handleNavigateToProjectTasks = () => {
+    navigate('/admin/project-tasks');
+  };
+
+  const handleNavigateToDatabase = () => {
+    navigate('/admin/database');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   const detailColumns = [
@@ -112,28 +130,40 @@ const AdminDashboard: React.FC = () => {
   return (
     <div style={{
       maxWidth: 1200,
-      height: '100vh',
+      minHeight: '100vh',
       margin: '0 auto',
       padding: 0,
       background: '#f5f7fa',
-      overflow: 'hidden',
+      overflow: 'auto',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
       alignItems: 'center'
     }}>
-      <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }} styles={{ body: { padding: 0 } }}>
+      <Card style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 0, width: '100%', maxWidth: 1000 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, borderBottom: '1px solid #f0f0f0', borderRadius: '12px 12px 0 0', background: '#fff' }}>
           <div style={{ fontWeight: 700, fontSize: 18, color: '#1976a1' }}>管理员：{admin!.name}（{admin!.code}）</div>
           <div>
             <Button 
               type="primary" 
-              onClick={() => navigate('/admin/database')} 
+              onClick={handleNavigateToProjectTasks} 
+              style={{ marginRight: 8, borderRadius: 8 }}
+            >
+              项目任务管理
+            </Button>
+            <Button 
+              type="primary" 
+              onClick={handleNavigateToDatabase} 
               style={{ marginRight: 8, borderRadius: 8 }}
             >
               数据库管理
             </Button>
-            <Button onClick={() => { logout(); navigate('/login'); }} style={{ borderRadius: 8 }}>退出登录</Button>
+            <Button 
+              icon={<LogoutOutlined />} 
+              onClick={handleLogout} 
+              style={{ borderRadius: 8 }}
+            >
+              退出登录
+            </Button>
           </div>
         </div>
         <div style={{ padding: 24, overflowX: 'auto' }}>

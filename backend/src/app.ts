@@ -8,6 +8,7 @@ import personRoutes from './routes/person';
 import indicatorRoutes from './routes/indicator';
 import scoreRoutes from './routes/score';
 import adminRoutes from './routes/admin';
+import taskRoutes from './routes/task';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use('/api/person', personRoutes);
 app.use('/api/indicators', indicatorRoutes);
 app.use('/api/score', scoreRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/task', taskRoutes);
 
 // Basic test route
 app.get('/test', (req, res) => {

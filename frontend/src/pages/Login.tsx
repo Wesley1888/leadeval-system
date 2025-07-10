@@ -32,14 +32,14 @@ const Login: React.FC = () => {
 
   return (
     <div style={{
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
       background: '#1976a1',
       padding: 0,
-      overflow: 'hidden'
+      overflow: 'auto'
     }}>
       {/* 左上角按钮 */}
       <div style={{ position: 'fixed', top: 0, left: 0, padding: 16, zIndex: 1000 }}>

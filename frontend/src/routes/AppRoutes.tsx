@@ -1,15 +1,32 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Spin } from 'antd';
 import Login from '../pages/Login';
 import Score from '../pages/Score';
 import AdminLogin from '../pages/AdminLogin';
 import AdminDashboard from '../pages/AdminDashboard';
 import DatabaseManager from '../pages/DatabaseManager';
+import ProjectTasks from '../pages/ProjectTasks';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export const AppRoutes: React.FC = () => {
-  const { user, admin } = useAuth();
+  const { user, admin, loading } = useAuth();
+
+  // 如果还在加载中，显示加载指示器
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: '#f5f7fa'
+      }}>
+        <Spin size="large" tip="加载中..." />
+      </div>
+    );
+  }
 
   return (
     <Routes>
@@ -67,6 +84,16 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requireAdmin={true}>
             <DatabaseManager />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* 项目任务协同管理页面 - 需要管理员认证 */}
+      <Route 
+        path="/admin/project-tasks" 
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <ProjectTasks />
           </ProtectedRoute>
         } 
       />

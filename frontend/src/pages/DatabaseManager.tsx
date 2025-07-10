@@ -3,6 +3,7 @@ import { Card, Input, Button, message, Table, Space, Modal, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { DashboardOutlined, LogoutOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -85,33 +86,49 @@ const DatabaseManager: React.FC = () => {
     setResult(null);
   };
 
+  const handleNavigateToDashboard = () => {
+    navigate('/admin/dashboard');
+  };
+
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   return (
-    <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: 24 }}>
-      {/* 顶部导航栏 */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 24, 
-        right: 24, 
-        padding: 12, 
-        zIndex: 1000, 
-        background: 'rgba(255,255,255,0.95)', 
-        borderRadius: 8, 
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)' 
-      }}>
-        <Space>
-          <span>管理员：{admin.name}</span>
-          <Button onClick={() => navigate('/admin/dashboard')}>返回仪表板</Button>
-          <Button onClick={handleLogout}>退出登录</Button>
-        </Space>
-      </div>
-
-      <div style={{ maxWidth: 1200, margin: '0 auto', marginTop: 80 }}>
-        <Card title="数据库管理" style={{ marginBottom: 24 }}>
+    <div style={{ minHeight: '100vh', background: '#f5f7fa', overflow: 'auto', padding: 24 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <Card 
+          title={
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>数据库管理</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 14, color: '#666' }}>
+                  管理员：{admin.name}（{admin.code}）
+                </span>
+              </div>
+            </div>
+          } 
+          extra={
+            <Space>
+              <Button 
+                icon={<DashboardOutlined />} 
+                onClick={handleNavigateToDashboard}
+                style={{ borderRadius: 8 }}
+              >
+                返回仪表盘
+              </Button>
+              <Button 
+                icon={<LogoutOutlined />} 
+                onClick={handleLogout}
+                style={{ borderRadius: 8 }}
+              >
+                退出登录
+              </Button>
+            </Space>
+          } 
+          style={{ marginBottom: 24 }}
+        >
           <Alert
             message="⚠️ 安全提醒"
             description="此功能允许执行任意 SQL 语句，请谨慎操作。建议在执行前备份数据库。"

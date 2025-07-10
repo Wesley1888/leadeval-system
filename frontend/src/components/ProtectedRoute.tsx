@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Spin } from 'antd';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,8 +14,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireUser = false, 
   requireAdmin = false 
 }) => {
-  const { user, admin } = useAuth();
+  const { user, admin, loading } = useAuth();
   const location = useLocation();
+
+  // 如果还在加载中，显示加载指示器
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: '#f5f7fa'
+      }}>
+        <Spin size="large" tip="加载中..." />
+      </div>
+    );
+  }
 
   // 如果不需要认证，直接渲染
   if (!requireUser && !requireAdmin) {

@@ -274,7 +274,7 @@ const Score: React.FC = () => {
   ];
 
   return (
-    <div style={{ background: '#f5f7fa', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f7fa', overflow: 'auto' }}>
       {/* 顶部导航栏 */}
       <div style={{ position: 'fixed', top: 24, right: 24, padding: 12, zIndex: 1000, background: 'rgba(255,255,255,0.95)', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
         <span style={{ marginRight: 16 }}>当前考核码：{user!.code}</span>

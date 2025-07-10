@@ -21,6 +21,7 @@ interface AuthContextType {
   setAdmin: (admin: Admin | null) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +41,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<User | null>(null);
   const [admin, setAdminState] = useState<Admin | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // 从本地存储加载状态
   useEffect(() => {
@@ -48,21 +50,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (savedUser) {
       try {
-        setUserState(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUserState(parsedUser);
       } catch (error) {
-        console.error('Failed to parse saved user:', error);
         localStorage.removeItem('user');
       }
     }
     
     if (savedAdmin) {
       try {
-        setAdminState(JSON.parse(savedAdmin));
+        const parsedAdmin = JSON.parse(savedAdmin);
+        setAdminState(parsedAdmin);
       } catch (error) {
-        console.error('Failed to parse saved admin:', error);
         localStorage.removeItem('admin');
       }
     }
+    
+    setLoading(false);
   }, []);
 
   // 设置用户状态并保存到本地存储
@@ -102,6 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAdmin,
     logout,
     isAuthenticated,
+    loading,
   };
 
   return (

@@ -25,14 +25,19 @@ const AdminLogin: React.FC = () => {
     setLoading(true);
     try {
       const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      
       const res = await axios.post<AdminLoginResponse>(`${API_BASE}/api/admin/login`, values);
+      
       if (res.data.success && res.data.token && res.data.admin) {
         message.success('登录成功');
-        setAdmin({
+        
+        const adminData = {
           token: res.data.token,
           name: res.data.admin.name,
           code: res.data.admin.id.toString(),
-        });
+        };
+        setAdmin(adminData);
+        
         // 如果有重定向路径，则导航到该路径，否则导航到管理员仪表板
         const from = location.state?.from?.pathname || '/admin/dashboard';
         navigate(from, { replace: true });
@@ -47,7 +52,7 @@ const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1976a1' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#1976a1', overflow: 'auto' }}>
       <Card style={{ width: 350 }}>
         <h2 style={{ textAlign: 'center', marginBottom: 24 }}>管理员登录</h2>
         <Form onFinish={onFinish}>
