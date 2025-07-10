@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Button, message, Table, Space, Modal, Alert } from 'antd';
+import { Card, Input, Button, message, Table, Space, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,7 +22,6 @@ const DatabaseManager: React.FC = () => {
   const navigate = useNavigate();
   const [sql, setSql] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [result, setResult] = useState<QueryResult | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [tables, setTables] = useState<string[]>([]);
   const [tableStructure, setTableStructure] = useState<QueryResult | null>(null);
@@ -172,7 +171,6 @@ const DatabaseManager: React.FC = () => {
           }});
         }
       }
-      setResult(null); // 清空旧结果
       setMultiResults(allResults); // 新增：存储多条结果
       // 添加到历史记录
       if (!history.includes(sql.trim())) {
@@ -190,7 +188,6 @@ const DatabaseManager: React.FC = () => {
 
   const handleClear = () => {
     setSql('');
-    setResult(null);
   };
 
   const handleNavigateToDashboard = () => {

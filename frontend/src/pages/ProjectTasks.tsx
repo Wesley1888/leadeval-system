@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm, Tag } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Button, Table, Input, Tag, Space, message, Popconfirm, Select, Form } from 'antd';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -53,7 +53,6 @@ const ProjectTasks: React.FC = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTask, setEditTask] = useState<Partial<Task>>({});
   const [form] = Form.useForm();
@@ -104,10 +103,10 @@ const ProjectTasks: React.FC = () => {
   }, [admin]);
 
   useEffect(() => {
-    if (modalOpen && !editingId && adminOptions.length > 0 && admin?.name) {
+    if (adminOptions.length > 0 && admin?.name) {
       form.setFieldsValue({ owner: admin.name });
     }
-  }, [modalOpen, editingId, adminOptions, admin, form]);
+  }, [adminOptions, admin, form]);
 
   const handleAdd = () => {
     setAdding(true);
@@ -190,30 +189,6 @@ const ProjectTasks: React.FC = () => {
       fetchTasks();
     } catch (error) {
       message.error('删除失败');
-    }
-  };
-
-  const handleModalOk = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingId) {
-        await axios.post(`${API_BASE}/api/task/update`, { ...editTask, ...values }, {
-          headers: { Authorization: `Bearer ${admin!.token}` }
-        });
-        message.success('修改成功');
-      } else {
-        await axios.post(`${API_BASE}/api/task/add`, values, {
-          headers: { Authorization: `Bearer ${admin!.token}` }
-        });
-        message.success('添加成功');
-      }
-      setModalOpen(false);
-      fetchTasks();
-    } catch (err: any) {
-      if (err.errorFields) {
-        return;
-      }
-      message.error('操作失败');
     }
   };
 
