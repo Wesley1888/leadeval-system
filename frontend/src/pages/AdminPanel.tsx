@@ -5,7 +5,8 @@ import {
   UserOutlined,
   KeyOutlined,
   BarChartOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  PercentageOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +16,7 @@ import CodeManager from './CodeManager';
 import WeightManager from './WeightManager';
 import ProjectTasks from './ProjectTasks';
 import DatabaseManager from './DatabaseManager';
+import StatResult from './StatResult';
 
 const { Sider, Content } = Layout;
 
@@ -37,6 +39,8 @@ const AdminPanel: React.FC = () => {
     content = <CodeManager />;
   } else if (selectedKey === 'weight') {
     content = <WeightManager />;
+  } else if (selectedKey === 'stat') {
+    content = <StatResult />;
   } else if (selectedKey === 'project-tasks') {
     content = <ProjectTasks />;
   } else if (selectedKey === 'database') {
@@ -85,8 +89,13 @@ const AdminPanel: React.FC = () => {
             },
             {
               key: 'weight',
-              icon: <BarChartOutlined />,
+              icon: <PercentageOutlined />,
               label: '权重管理',
+            },
+            {
+              key: 'stat',
+              icon: <BarChartOutlined />,
+              label: '统计结果',
             },
             {
               key: 'project-tasks',

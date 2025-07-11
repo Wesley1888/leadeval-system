@@ -24,20 +24,30 @@ function writeTasks(tasks: any[]) {
 
 export const getTasks = (req: Request, res: Response): void => {
   const tasks = readTasks();
-  res.json({ success: true, tasks });
+  // 转换旧数据格式到新格式
+  const convertedTasks = tasks.map((task: any) => ({
+    id: task.id,
+    name: task.name || task.title || '',
+    description: task.description || task.desc || '',
+    owner: task.owner || '',
+    status: task.status || '未开始',
+    created_at: task.created_at || task.updated_at || new Date().toISOString(),
+    updated_at: task.updated_at || new Date().toISOString()
+  }));
+  res.json({ success: true, data: convertedTasks });
 };
 
 export const addTask = (req: Request, res: Response): void => {
   const tasks = readTasks();
-  const { title, owner, status, desc } = req.body;
+  const { name, description, owner, status } = req.body;
   const id = tasks.length ? Math.max(...tasks.map((t: any) => t.id)) + 1 : 1;
   const now = new Date().toISOString();
   const newTask = { 
     id, 
-    title, 
+    name, 
+    description, 
     owner, 
-    status, 
-    desc,
+    status,
     created_at: now,
     updated_at: now
   };
@@ -48,7 +58,8 @@ export const addTask = (req: Request, res: Response): void => {
 
 export const updateTask = (req: Request, res: Response): void => {
   const tasks = readTasks();
-  const { id, title, owner, status, desc } = req.body;
+  const { name, description, owner, status } = req.body;
+  const id = parseInt(req.params.id);
   const idx = tasks.findIndex((t: any) => t.id === id);
   if (idx === -1) {
     res.status(404).json({ success: false, message: '任务不存在' });
@@ -57,10 +68,10 @@ export const updateTask = (req: Request, res: Response): void => {
   const now = new Date().toISOString();
   tasks[idx] = { 
     ...tasks[idx], 
-    title, 
+    name, 
+    description, 
     owner, 
-    status, 
-    desc,
+    status,
     updated_at: now
   };
   writeTasks(tasks);
@@ -69,7 +80,7 @@ export const updateTask = (req: Request, res: Response): void => {
 
 export const deleteTask = (req: Request, res: Response): void => {
   const tasks = readTasks();
-  const { id } = req.body;
+  const id = parseInt(req.params.id);
   const idx = tasks.findIndex((t: any) => t.id === id);
   if (idx === -1) {
     res.status(404).json({ success: false, message: '任务不存在' });

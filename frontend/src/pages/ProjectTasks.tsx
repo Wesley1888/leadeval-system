@@ -28,7 +28,7 @@ const ProjectTasks: React.FC = () => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/admin/project-tasks`, {
+      const res = await axios.get(`${API_BASE}/api/task`, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
       setTasks(res.data.data || []);
@@ -58,7 +58,7 @@ const ProjectTasks: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`${API_BASE}/api/admin/project-tasks/${id}`, {
+      await axios.delete(`${API_BASE}/api/task/${id}`, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
       message.success('已删除');
@@ -72,12 +72,12 @@ const ProjectTasks: React.FC = () => {
     const values = await form.validateFields();
     try {
       if (editing) {
-        await axios.put(`${API_BASE}/api/admin/project-tasks/${editing.id}`, values, {
+        await axios.put(`${API_BASE}/api/task/${editing.id}`, values, {
           headers: { Authorization: `Bearer ${admin?.token}` }
         });
         message.success('修改成功');
       } else {
-        await axios.post(`${API_BASE}/api/admin/project-tasks`, values, {
+        await axios.post(`${API_BASE}/api/task`, values, {
           headers: { Authorization: `Bearer ${admin?.token}` }
         });
         message.success('添加成功');
