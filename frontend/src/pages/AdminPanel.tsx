@@ -48,8 +48,8 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={200} style={{ background: '#fff' }}>
+    <Layout style={{ minHeight: '100vh', height: '100vh' }}>
+      <Sider width={200} style={{ background: '#fff', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 10 }}>
         <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
@@ -74,27 +74,27 @@ const AdminPanel: React.FC = () => {
           items={[
             {
               key: 'department',
-              icon: <ApartmentOutlined />,
+              icon: <ApartmentOutlined />, 
               label: '部门管理',
             },
             {
               key: 'person',
-              icon: <UserOutlined />,
+              icon: <UserOutlined />, 
               label: '被考核人管理',
             },
             {
               key: 'code',
-              icon: <KeyOutlined />,
+              icon: <KeyOutlined />, 
               label: '考核码管理',
             },
             {
               key: 'weight',
-              icon: <PercentageOutlined />,
+              icon: <PercentageOutlined />, 
               label: '权重管理',
             },
             {
               key: 'stat',
-              icon: <BarChartOutlined />,
+              icon: <BarChartOutlined />, 
               label: '统计结果',
             },
             {
@@ -110,8 +110,8 @@ const AdminPanel: React.FC = () => {
           ]}
         />
       </Sider>
-      <Layout style={{ padding: '24px' }}>
-        <Content style={{ background: '#fff', padding: 24, minHeight: 600 }}>
+      <Layout style={{ marginLeft: 200, height: '100vh' }}>
+        <Content style={{ background: '#fff', padding: 24, minHeight: 600, height: '100vh', overflow: 'auto' }}>
           {content}
         </Content>
       </Layout>

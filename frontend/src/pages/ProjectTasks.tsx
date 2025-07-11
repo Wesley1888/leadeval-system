@@ -106,9 +106,30 @@ const ProjectTasks: React.FC = () => {
         return <Tag color={color}>{status}</Tag>;
       }
     },
-    { title: '负责人', dataIndex: 'owner', key: 'owner', width: 100 },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', width: 140 },
-    { title: '更新时间', dataIndex: 'updated_at', key: 'updated_at', width: 140 },
+    { 
+      title: '更新时间', 
+      dataIndex: 'updated_at', 
+      key: 'updated_at', 
+      width: 140,
+      render: (updated_at: string, record: Task) => {
+        const formatDate = (dateString: string) => {
+          const date = new Date(dateString);
+          return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        };
+        return (
+          <Space>
+            <span>{formatDate(updated_at)}</span>
+            <Tag color="purple">{record.owner}</Tag>
+          </Space>
+        );
+      }
+    },
     {
       title: '操作',
       key: 'action',
