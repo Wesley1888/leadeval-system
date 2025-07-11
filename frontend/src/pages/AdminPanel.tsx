@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Button, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Button, Space, Card, List, Typography, Row, Col, Statistic } from 'antd';
 import {
   ApartmentOutlined,
   UserOutlined,
@@ -8,7 +8,10 @@ import {
   LogoutOutlined,
   PercentageOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  ProjectOutlined,
+  BellOutlined,
+  HomeOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,11 +22,13 @@ import WeightManager from './WeightManager';
 import ProjectTasks from './ProjectTasks';
 import DatabaseManager from './DatabaseManager';
 import StatResult from './StatResult';
+import axios from 'axios';
+import { message } from 'antd';
 
 const { Header, Sider, Content } = Layout;
 
 const AdminPanel: React.FC = () => {
-  const [selectedKey, setSelectedKey] = useState('department');
+  const [selectedKey, setSelectedKey] = useState('dashboard');
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
@@ -33,8 +38,75 @@ const AdminPanel: React.FC = () => {
     navigate('/admin/login');
   };
 
+  // Dashboard数据示例（实际可用useEffect+接口获取）
+  const [dashboardStats, setDashboardStats] = useState({
+    department: 0,
+    person: 0,
+    task: 0,
+    todo: 0
+  });
+  const [recentLogs, setRecentLogs] = useState<string[]>([]);
+
+  useEffect(() => {
+    // TODO: 可用接口获取真实统计数据
+    setDashboardStats({ department: 12, person: 120, task: 34, todo: 3 });
+    setRecentLogs([
+      '2024-06-01 09:00 添加任务“年度考核”',
+      '2024-06-01 08:30 部门“技术服务公司”信息更新',
+      '2024-05-31 17:20 完成任务“安全培训”',
+      '2024-05-31 16:00 新增人员“张三”',
+    ]);
+  }, []);
+
+  // 复用统计结果页面的导出Excel逻辑
+  const handleExport = async () => {
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const params: any = { year: new Date().getFullYear() + 1 };
+      const res = await axios.get(`${API_BASE}/api/score/export`, {
+        headers: { Authorization: `Bearer ${admin?.token}` },
+        params,
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'scores.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      message.error('导出失败');
+    }
+  };
+
   let content;
-  if (selectedKey === 'department') {
+  if (selectedKey === 'dashboard') {
+    content = (
+      <>
+        <Row gutter={16}>
+          <Col span={6}><Card><Statistic title="部门数" value={dashboardStats.department} prefix={<ApartmentOutlined />} /></Card></Col>
+          <Col span={6}><Card><Statistic title="人员数" value={dashboardStats.person} prefix={<UserOutlined />} /></Card></Col>
+          <Col span={6}><Card><Statistic title="任务数" value={dashboardStats.task} prefix={<ProjectOutlined />} /></Card></Col>
+          <Col span={6}><Card><Statistic title="待办事项" value={dashboardStats.todo} prefix={<BellOutlined />} /></Card></Col>
+        </Row>
+        {/* 快捷操作区 */}
+        <Card style={{ marginTop: 24 }} bodyStyle={{ padding: 16 }}>
+          <Space>
+            <Button type="primary" onClick={() => setSelectedKey('project-tasks')}>添加任务</Button>
+            <Button onClick={() => setSelectedKey('stat')}>查看统计</Button>
+            <Button onClick={handleExport} type="default">导出数据</Button>
+          </Space>
+        </Card>
+        <Card style={{ marginTop: 24 }} title="最近动态">
+          <List dataSource={recentLogs} renderItem={item => <List.Item>{item}</List.Item>} />
+        </Card>
+        <Typography.Paragraph style={{ marginTop: 24 }}>
+          欢迎使用 <b style={{ color: '#1677ff' }}>管理后台</b>！如有疑问请联系系统管理员。
+        </Typography.Paragraph>
+      </>
+    );
+  } else if (selectedKey === 'department') {
     content = <DepartmentManager />;
   } else if (selectedKey === 'person') {
     content = <PersonManager />;
@@ -90,6 +162,11 @@ const AdminPanel: React.FC = () => {
             style={{ height: 'calc(100% - 80px)', borderRight: 0 }}
             onClick={({ key }) => setSelectedKey(key as string)}
             items={[
+              {
+                key: 'dashboard',
+                icon: <HomeOutlined />,
+                label: '首页总览',
+              },
               {
                 key: 'department',
                 icon: <ApartmentOutlined />, 
