@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Space } from 'antd';
+import { Layout, Menu, Button, Space, Row, Col } from 'antd';
 import {
   ApartmentOutlined,
   UserOutlined,
@@ -18,12 +18,13 @@ import ProjectTasks from './ProjectTasks';
 import DatabaseManager from './DatabaseManager';
 import StatResult from './StatResult';
 
-const { Sider, Content } = Layout;
+const { Header, Sider, Content } = Layout;
 
 const AdminPanel: React.FC = () => {
   const [selectedKey, setSelectedKey] = useState('department');
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(true);
 
   const handleLogout = () => {
     logout();
@@ -49,12 +50,12 @@ const AdminPanel: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh', height: '100vh' }}>
-      <Sider width={200} style={{ background: '#fff', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 10 }}>
-        <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
-              管理员：{admin?.name}
-            </div>
+      {/* 顶部全局Header */}
+      <Header style={{ background: '#fff', height: 56, lineHeight: '56px', padding: '0 32px', boxShadow: '0 2px 8px #f0f1f2', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          <span style={{ fontSize: 20, fontWeight: 700, color: '#1677ff', letterSpacing: 2 }}>管理后台</span>
+          <Space>
+            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>管理员：{admin?.name}</span>
             <Button 
               type="text" 
               danger 
@@ -66,54 +67,65 @@ const AdminPanel: React.FC = () => {
             </Button>
           </Space>
         </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          style={{ height: 'calc(100% - 80px)', borderRight: 0 }}
-          onClick={({ key }) => setSelectedKey(key as string)}
-          items={[
-            {
-              key: 'department',
-              icon: <ApartmentOutlined />, 
-              label: '部门管理',
-            },
-            {
-              key: 'person',
-              icon: <UserOutlined />, 
-              label: '被考核人管理',
-            },
-            {
-              key: 'code',
-              icon: <KeyOutlined />, 
-              label: '考核码管理',
-            },
-            {
-              key: 'weight',
-              icon: <PercentageOutlined />, 
-              label: '权重管理',
-            },
-            {
-              key: 'stat',
-              icon: <BarChartOutlined />, 
-              label: '统计结果',
-            },
-            {
-              key: 'project-tasks',
-              icon: <span style={{fontSize:16}}>📋</span>,
-              label: '项目任务管理',
-            },
-            {
-              key: 'database',
-              icon: <span style={{fontSize:16}}>🗄️</span>,
-              label: '数据库管理',
-            },
-          ]}
-        />
-      </Sider>
-      <Layout style={{ marginLeft: 200, height: '100vh' }}>
-        <Content style={{ background: '#fff', padding: 24, minHeight: 600, height: '100vh', overflow: 'auto' }}>
-          {content}
-        </Content>
+      </Header>
+      <Layout style={{ marginTop: 56 }}>
+        <Sider
+          width={200}
+          collapsedWidth={80}
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          style={{ background: '#fff', height: 'calc(100vh - 56px)', position: 'fixed', left: 0, top: 56, zIndex: 10 }}
+        >
+          <Menu
+            mode="inline"
+            selectedKeys={[selectedKey]}
+            style={{ height: 'calc(100% - 80px)', borderRight: 0 }}
+            onClick={({ key }) => setSelectedKey(key as string)}
+            items={[
+              {
+                key: 'department',
+                icon: <ApartmentOutlined />, 
+                label: '部门管理',
+              },
+              {
+                key: 'person',
+                icon: <UserOutlined />, 
+                label: '被考核人管理',
+              },
+              {
+                key: 'code',
+                icon: <KeyOutlined />, 
+                label: '考核码管理',
+              },
+              {
+                key: 'weight',
+                icon: <PercentageOutlined />, 
+                label: '权重管理',
+              },
+              {
+                key: 'stat',
+                icon: <BarChartOutlined />, 
+                label: '统计结果',
+              },
+              {
+                key: 'project-tasks',
+                icon: <span style={{fontSize:16}}>📋</span>,
+                label: '项目任务管理',
+              },
+              {
+                key: 'database',
+                icon: <span style={{fontSize:16}}>🗄️</span>,
+                label: '数据库管理',
+              },
+            ]}
+          />
+        </Sider>
+        <Layout style={{ marginLeft: collapsed ? 80 : 200, minHeight: 'calc(100vh - 56px)' }}>
+          <Content style={{ background: '#fff', padding: 24, minHeight: 600, height: '100%', overflow: 'auto' }}>
+            {content}
+          </Content>
+        </Layout>
       </Layout>
     </Layout>
   );
