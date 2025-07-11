@@ -48,8 +48,26 @@ const AdminPanel: React.FC = () => {
   const [recentLogs, setRecentLogs] = useState<string[]>([]);
 
   useEffect(() => {
-    // TODO: 可用接口获取真实统计数据
-    setDashboardStats({ department: 12, person: 120, task: 34, todo: 3 });
+    // 获取真实统计数据
+    const fetchStats = async () => {
+      try {
+        const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+        const [deptRes, personRes, taskRes] = await Promise.all([
+          axios.get(`${API_BASE}/api/admin/department`, { headers: { Authorization: `Bearer ${admin?.token}` } }),
+          axios.get(`${API_BASE}/api/admin/person`, { headers: { Authorization: `Bearer ${admin?.token}` } }),
+          axios.get(`${API_BASE}/api/task`, { headers: { Authorization: `Bearer ${admin?.token}` } })
+        ]);
+        const department = deptRes.data.data?.length || 0;
+        const person = personRes.data.data?.length || 0;
+        const taskList = taskRes.data.data || [];
+        const task = taskList.length;
+        const todo = taskList.filter((t: any) => t.status !== '已完成').length;
+        setDashboardStats({ department, person, task, todo });
+      } catch {
+        setDashboardStats({ department: 0, person: 0, task: 0, todo: 0 });
+      }
+    };
+    fetchStats();
     setRecentLogs([
       '2024-06-01 09:00 添加任务“年度考核”',
       '2024-06-01 08:30 部门“技术服务公司”信息更新',
