@@ -5,6 +5,14 @@ export interface Person {
   department_id: number;
 }
 
+// 代码相关类型
+export interface Code {
+  id: string;
+  department_id: number;
+  role: string;
+  used: number;
+}
+
 // 管理员相关类型
 export interface Admin {
   id: number;

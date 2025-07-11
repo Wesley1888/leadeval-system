@@ -37,8 +37,8 @@ const AdminLogin: React.FC = () => {
         };
         setAdmin(adminData);
         
-        // 如果有重定向路径，则导航到该路径，否则导航到管理员仪表板
-        const from = location.state?.from?.pathname || '/admin/dashboard';
+        // 如果有重定向路径，则导航到该路径，否则导航到管理员面板
+        const from = location.state?.from?.pathname || '/admin/panel';
         navigate(from, { replace: true });
       } else {
         message.error(res.data.message || '登录失败');

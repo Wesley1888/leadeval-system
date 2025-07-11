@@ -9,26 +9,26 @@
   {
     "id": 2,
     "title": "考核管理界面",
-    "owner": "wcz",
-    "status": "未开始",
+    "owner": "wxl",
+    "status": "进行中",
     "desc": "查看各单位考核码完成情况",
-    "updated_at": "2025-07-10T02:45:41.172Z"
+    "updated_at": "2025-07-10T09:01:19.028Z"
   },
   {
     "id": 3,
     "title": "token失效未退出",
-    "owner": "wcz",
+    "owner": "wxl",
     "status": "未开始",
     "desc": "2小时后token失效但是没有退出登录",
-    "updated_at": "2025-07-10T02:45:39.607Z"
+    "updated_at": "2025-07-10T08:48:45.769Z"
   },
   {
     "id": 4,
     "title": "数据库管理功能",
     "owner": "wxl",
-    "status": "未开始",
+    "status": "已完成",
     "desc": "添加多行运行 一键看表等功能",
     "created_at": "2025-07-10T02:15:40.869Z",
-    "updated_at": "2025-07-10T02:49:14.086Z"
+    "updated_at": "2025-07-10T08:46:26.352Z"
   }
 ]

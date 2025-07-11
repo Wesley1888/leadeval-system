@@ -8,6 +8,7 @@ import AdminLogin from '../pages/AdminLogin';
 import AdminDashboard from '../pages/AdminDashboard';
 import DatabaseManager from '../pages/DatabaseManager';
 import ProjectTasks from '../pages/ProjectTasks';
+import AdminPanel from '../pages/AdminPanel';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export const AppRoutes: React.FC = () => {
@@ -35,7 +36,7 @@ export const AppRoutes: React.FC = () => {
         path="/" 
         element={
           user ? <Navigate to="/score" replace /> :
-          admin ? <Navigate to="/admin/dashboard" replace /> :
+          admin ? <Navigate to="/admin/panel" replace /> :
           <Navigate to="/login" replace />
         } 
       />
@@ -63,7 +64,7 @@ export const AppRoutes: React.FC = () => {
       <Route 
         path="/admin/login" 
         element={
-          admin ? <Navigate to="/admin/dashboard" replace /> :
+          admin ? <Navigate to="/admin/panel" replace /> :
           <AdminLogin />
         } 
       />
@@ -94,6 +95,16 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requireAdmin={true}>
             <ProjectTasks />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* 管理员面板 - 需要管理员认证 */}
+      <Route 
+        path="/admin/panel" 
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminPanel />
           </ProtectedRoute>
         } 
       />
