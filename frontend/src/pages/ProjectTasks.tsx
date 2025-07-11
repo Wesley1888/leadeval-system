@@ -47,6 +47,7 @@ const ProjectTasks: React.FC = () => {
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
+    form.setFieldsValue({ owner: admin?.name, status: '未开始' });
     setModalOpen(true);
   };
 
@@ -69,7 +70,13 @@ const ProjectTasks: React.FC = () => {
   };
 
   const handleOk = async () => {
-    const values = await form.validateFields();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      // 校验失败，表单会自动高亮错误，不需要额外提示
+      return;
+    }
     try {
       if (editing) {
         await axios.put(`${API_BASE}/api/task/${editing.id}`, values, {
@@ -164,12 +171,12 @@ const ProjectTasks: React.FC = () => {
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="status" label="状态" rules={[{ required: true, message: '请选择状态' }]}> 
-            <Select>
+            <Select disabled={!!editing}>
               {statusOptions.map(s => <Select.Option key={s} value={s}>{s}</Select.Option>)}
             </Select>
           </Form.Item>
           <Form.Item name="owner" label="负责人" rules={[{ required: true, message: '请输入负责人' }]}> 
-            <Input />
+            <Input disabled />
           </Form.Item>
         </Form>
       </Modal>

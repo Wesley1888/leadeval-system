@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Space, Row, Col } from 'antd';
+import { Layout, Menu, Button, Space } from 'antd';
 import {
   ApartmentOutlined,
   UserOutlined,
   KeyOutlined,
   BarChartOutlined,
   LogoutOutlined,
-  PercentageOutlined
+  PercentageOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,7 +26,7 @@ const AdminPanel: React.FC = () => {
   const [selectedKey, setSelectedKey] = useState('department');
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -75,6 +77,11 @@ const AdminPanel: React.FC = () => {
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
+          trigger={
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              {collapsed ? <MenuUnfoldOutlined style={{ fontSize: 18 }} /> : <MenuFoldOutlined style={{ fontSize: 18 }} />}
+            </span>
+          }
           style={{ background: '#fff', height: 'calc(100vh - 56px)', position: 'fixed', left: 0, top: 56, zIndex: 10 }}
         >
           <Menu

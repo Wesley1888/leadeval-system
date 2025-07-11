@@ -37,14 +37,15 @@
   }
 }
 
-/* 自定义 Sider 收起按钮颜色（主色背景+白色图标） */
+/* Sider trigger 背景为白色，hover 时略高亮 */
 .ant-layout-sider-trigger {
-  background: #1677ff !important;
-  color: #fff !important;
+  background: #fff !important;
+  color: #1677ff !important;
   border-top: 1px solid #e0e0e0;
+  box-shadow: none !important;
   transition: background 0.2s;
 }
 .ant-layout-sider-trigger:hover {
-  background: #0958d9 !important;
-  color: #fff !important;
+  background: #f5f7fa !important;
+  color: #1677ff !important;
 }

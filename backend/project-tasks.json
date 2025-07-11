@@ -4,7 +4,9 @@
     "title": "单位挨个评分1",
     "owner": "wxl",
     "status": "未开始",
-    "updated_at": "2025-07-10T01:48:31.639Z"
+    "updated_at": "2025-07-11T08:28:06.087Z",
+    "name": "单位挨个评分",
+    "description": "评完一个单位点提交继续评下一个"
   },
   {
     "id": 2,
@@ -20,9 +22,11 @@
     "id": 3,
     "title": "token失效未退出",
     "owner": "wxl",
-    "status": "未开始",
+    "status": "进行中",
     "desc": "2小时后token失效但是没有退出登录",
-    "updated_at": "2025-07-10T08:48:45.769Z"
+    "updated_at": "2025-07-11T08:17:36.878Z",
+    "name": "token失效未退出",
+    "description": "2小时后token失效但是没有退出登录"
   },
   {
     "id": 4,
