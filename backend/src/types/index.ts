@@ -13,6 +13,22 @@ export interface Code {
   used: number;
 }
 
+// 权重相关类型
+export interface Weight {
+  id: number;
+  department_id: number;
+  role: string;
+  weight: number;
+  year: number;
+}
+
+export interface WeightRequest {
+  department_id: number;
+  role: string;
+  weight: number;
+  year: number;
+}
+
 // 管理员相关类型
 export interface Admin {
   id: number;

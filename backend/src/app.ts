@@ -12,6 +12,7 @@ import taskRoutes from './routes/task';
 import adminDepartmentRoutes from './routes/adminDepartment';
 import adminPersonRoutes from './routes/adminPerson';
 import adminCodeRoutes from './routes/adminCode';
+import adminWeightRoutes from './routes/adminWeight';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/task', taskRoutes);
 app.use('/api/admin/department', adminDepartmentRoutes);
 app.use('/api/admin/person', adminPersonRoutes);
 app.use('/api/admin/code', adminCodeRoutes);
+app.use('/api/admin/weight', adminWeightRoutes);
 
 // Basic test route
 app.get('/test', (req, res) => {

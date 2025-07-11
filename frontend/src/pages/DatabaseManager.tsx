@@ -19,7 +19,7 @@ interface QueryResult {
 const ER_CACHE_KEY = 'db_er_diagram_cache_v1';
 
 const DatabaseManager: React.FC = () => {
-  const { admin, logout } = useAuth();
+  const { admin } = useAuth();
   const navigate = useNavigate();
   const [sql, setSql] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);

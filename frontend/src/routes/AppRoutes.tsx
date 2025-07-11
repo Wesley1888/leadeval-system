@@ -5,7 +5,7 @@ import { Spin } from 'antd';
 import Login from '../pages/Login';
 import Score from '../pages/Score';
 import AdminLogin from '../pages/AdminLogin';
-import AdminDashboard from '../pages/AdminDashboard';
+
 import DatabaseManager from '../pages/DatabaseManager';
 import ProjectTasks from '../pages/ProjectTasks';
 import AdminPanel from '../pages/AdminPanel';
@@ -69,15 +69,7 @@ export const AppRoutes: React.FC = () => {
         } 
       />
 
-      {/* 管理员仪表板 - 需要管理员认证 */}
-      <Route 
-        path="/admin/dashboard" 
-        element={
-          <ProtectedRoute requireAdmin={true}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        } 
-      />
+
 
       {/* 数据库管理页面 - 需要管理员认证 */}
       <Route 

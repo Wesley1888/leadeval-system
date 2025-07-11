@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, Button, Space } from 'antd';
 import {
   ApartmentOutlined,
   UserOutlined,
-  KeyOutlined
+  KeyOutlined,
+  BarChartOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import DepartmentManager from './DepartmentManager';
 import PersonManager from './PersonManager';
 import CodeManager from './CodeManager';
+import WeightManager from './WeightManager';
 import ProjectTasks from './ProjectTasks';
 import DatabaseManager from './DatabaseManager';
 
@@ -15,6 +20,13 @@ const { Sider, Content } = Layout;
 
 const AdminPanel: React.FC = () => {
   const [selectedKey, setSelectedKey] = useState('department');
+  const { admin, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+  };
 
   let content;
   if (selectedKey === 'department') {
@@ -23,6 +35,8 @@ const AdminPanel: React.FC = () => {
     content = <PersonManager />;
   } else if (selectedKey === 'code') {
     content = <CodeManager />;
+  } else if (selectedKey === 'weight') {
+    content = <WeightManager />;
   } else if (selectedKey === 'project-tasks') {
     content = <ProjectTasks />;
   } else if (selectedKey === 'database') {
@@ -32,10 +46,26 @@ const AdminPanel: React.FC = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider width={200} style={{ background: '#fff' }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666' }}>
+              管理员：{admin?.name}
+            </div>
+            <Button 
+              type="text" 
+              danger 
+              icon={<LogoutOutlined />} 
+              onClick={handleLogout}
+              style={{ padding: 0, height: 'auto' }}
+            >
+              退出登录
+            </Button>
+          </Space>
+        </div>
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
-          style={{ height: '100%', borderRight: 0 }}
+          style={{ height: 'calc(100% - 80px)', borderRight: 0 }}
           onClick={({ key }) => setSelectedKey(key as string)}
           items={[
             {
@@ -52,6 +82,11 @@ const AdminPanel: React.FC = () => {
               key: 'code',
               icon: <KeyOutlined />,
               label: '考核码管理',
+            },
+            {
+              key: 'weight',
+              icon: <BarChartOutlined />,
+              label: '权重管理',
             },
             {
               key: 'project-tasks',

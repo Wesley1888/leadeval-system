@@ -53,7 +53,7 @@
 - `/login` - 用户登录页面
 - `/score` - 用户评分页面（需要登录）
 - `/admin/login` - 管理员登录页面
-- `/admin/dashboard` - 管理员仪表板（需要管理员登录）
+
 
 ## 常见问题
 - 端口冲突：修改 .env 或 package.json 中的端口
