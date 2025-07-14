@@ -2,9 +2,9 @@
   {
     "id": 1,
     "title": "单位挨个评分1",
-    "owner": "wxl",
+    "owner": "admin",
     "status": "未开始",
-    "updated_at": "2025-07-11T08:28:06.087Z",
+    "updated_at": "2025-07-14T00:38:39.233Z",
     "name": "单位挨个评分",
     "description": "评完一个单位点提交继续评下一个"
   },
@@ -49,19 +49,19 @@
   {
     "id": 6,
     "name": "打分只提交有变化的分数",
-    "description": "1",
-    "owner": "wxl",
+    "description": "性能优化",
+    "owner": "admin",
     "status": "未开始",
     "created_at": "2025-07-11T09:20:24.296Z",
-    "updated_at": "2025-07-11T09:20:24.296Z"
+    "updated_at": "2025-07-14T00:38:43.201Z"
   },
   {
     "id": 7,
     "name": "任务顺序",
     "description": "已完成任务放最后\n最新的任务放前面",
     "owner": "wxl",
-    "status": "未开始",
+    "status": "已完成",
     "created_at": "2025-07-11T09:21:24.005Z",
-    "updated_at": "2025-07-11T09:21:24.005Z"
+    "updated_at": "2025-07-14T00:37:03.438Z"
   }
 ]

@@ -31,7 +31,24 @@ const ProjectTasks: React.FC = () => {
       const res = await axios.get(`${API_BASE}/api/task`, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
-      setTasks(res.data.data || []);
+      const tasksData = res.data.data || [];
+      
+      // 按时间排序，进行中的任务排在最前面
+      const sortedTasks = tasksData.sort((a: Task, b: Task) => {
+        // 首先按状态排序：进行中的任务在前，未开始的任务在中间，已完成的任务在后
+        const statusOrder = { '进行中': 0, '未开始': 1, '已完成': 2 };
+        const statusA = statusOrder[a.status as keyof typeof statusOrder] || 0;
+        const statusB = statusOrder[b.status as keyof typeof statusOrder] || 0;
+        
+        if (statusA !== statusB) {
+          return statusA - statusB;
+        }
+        
+        // 状态相同时，按更新时间倒序排列（最新的在前）
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      });
+      
+      setTasks(sortedTasks);
     } catch (err: any) {
       message.error(err.response?.data?.message || '获取任务失败');
     } finally {
@@ -79,6 +96,8 @@ const ProjectTasks: React.FC = () => {
     }
     try {
       if (editing) {
+        // 编辑时，负责人改为当前管理员
+        values.owner = admin?.name;
         await axios.put(`${API_BASE}/api/task/${editing.id}`, values, {
           headers: { Authorization: `Bearer ${admin?.token}` }
         });
@@ -143,7 +162,13 @@ const ProjectTasks: React.FC = () => {
       width: 120,
       render: (_: any, record: Task) => (
         <Space>
-          <Button size="small" onClick={() => handleEdit(record)}>编辑</Button>
+          <Button 
+            size="small" 
+            onClick={() => handleEdit(record)}
+            disabled={record.status === '已完成'}
+          >
+            编辑
+          </Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
             <Button size="small" danger>删除</Button>
           </Popconfirm>
@@ -171,7 +196,7 @@ const ProjectTasks: React.FC = () => {
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="status" label="状态" rules={[{ required: true, message: '请选择状态' }]}> 
-            <Select disabled={!!editing}>
+            <Select>
               {statusOptions.map(s => <Select.Option key={s} value={s}>{s}</Select.Option>)}
             </Select>
           </Form.Item>
