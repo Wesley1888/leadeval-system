@@ -34,6 +34,7 @@ const AdminLogin: React.FC = () => {
         const adminData = {
           token: res.data.token,
           name: res.data.admin.name,
+          expiresAt: Date.now() + 2 * 60 * 60 * 1000, // 2小时后过期
         };
         setAdmin(adminData);
         const from = location.state?.from?.pathname || '/admin/panel';

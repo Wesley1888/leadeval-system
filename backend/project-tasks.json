@@ -12,9 +12,9 @@
     "id": 2,
     "title": "考核管理界面",
     "owner": "wxl",
-    "status": "进行中",
+    "status": "已完成",
     "desc": "查看各单位考核码完成情况",
-    "updated_at": "2025-07-11T06:42:26.925Z",
+    "updated_at": "2025-07-14T01:04:12.181Z",
     "name": "考核管理界面",
     "description": "查看各单位考核码完成情况"
   },
@@ -42,18 +42,18 @@
     "name": "暂存重复提交分数",
     "description": "暂存一次 重复提交到数据库一次分数",
     "owner": "wxl",
-    "status": "进行中",
+    "status": "已完成",
     "created_at": "2025-07-11T09:09:38.190Z",
-    "updated_at": "2025-07-11T09:09:38.190Z"
+    "updated_at": "2025-07-14T01:05:19.768Z"
   },
   {
     "id": 6,
     "name": "打分只提交有变化的分数",
     "description": "性能优化",
-    "owner": "admin",
-    "status": "未开始",
+    "owner": "wxl",
+    "status": "已完成",
     "created_at": "2025-07-11T09:20:24.296Z",
-    "updated_at": "2025-07-14T00:38:43.201Z"
+    "updated_at": "2025-07-14T08:57:47.085Z"
   },
   {
     "id": 7,
@@ -72,5 +72,41 @@
     "status": "未开始",
     "created_at": "2025-07-14T01:01:31.768Z",
     "updated_at": "2025-07-14T01:01:31.768Z"
+  },
+  {
+    "id": 10,
+    "name": "按照旧考核办法重新设计",
+    "description": "部门管理\n打分页面\n统计结果\n权重管理",
+    "owner": "wxl",
+    "status": "已完成",
+    "created_at": "2025-07-14T01:49:37.353Z",
+    "updated_at": "2025-07-14T08:58:07.797Z"
+  },
+  {
+    "id": 11,
+    "name": "优秀人数限",
+    "description": "优秀人数限制目前在后台写死 backend\\src\\controllers\\scoreController.ts\n==>getExcellentLimit",
+    "owner": "wcz",
+    "status": "未开始",
+    "created_at": "2025-07-14T02:29:56.375Z",
+    "updated_at": "2025-07-14T02:29:56.375Z"
+  },
+  {
+    "id": 12,
+    "name": "现存的打分逻辑",
+    "description": "每一个分数都会请求后台，一个被评人全部评价会请求5次，100个被评人会请求500次(已改为统一一次请求)",
+    "owner": "wxl",
+    "status": "已完成",
+    "created_at": "2025-07-14T02:39:15.818Z",
+    "updated_at": "2025-07-14T08:14:00.488Z"
+  },
+  {
+    "id": 13,
+    "name": "统计结果的总分计",
+    "description": "统计结果的总分计为字符串拼接，而不是数字的相加\n如21+20=2120 而不是 21+20=41",
+    "owner": "wcz",
+    "status": "未开始",
+    "created_at": "2025-07-14T07:16:56.626Z",
+    "updated_at": "2025-07-14T07:16:56.626Z"
   }
 ]

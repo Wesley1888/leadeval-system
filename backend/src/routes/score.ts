@@ -6,13 +6,15 @@ import {
   exportScoresExcel,
   getAllScores,
   getScoreStat,
-  getSelfScores
+  getSelfScores,
+  batchSubmitScores
 } from '../controllers/scoreController';
 import adminAuth from '../middleware/auth';
 
 const router = Router();
 
 router.post('/', submitScore);
+router.post('/batch', batchSubmitScores);
 router.get('/limit', getExcellentLimit);
 router.get('/', adminAuth, getScoresByScorer);
 router.get('/export', adminAuth, exportScoresExcel);

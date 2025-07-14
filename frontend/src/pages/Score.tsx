@@ -45,12 +45,22 @@ const Score: React.FC = () => {
   const [tooltipOpen, setTooltipOpen] = useState<TooltipOpenMap>({});
   const tooltipTimers = React.useRef<{ [key: string]: any }>({});
   const tooltipHover = React.useRef<{ [key: string]: boolean }>({});
+  // 新增：记录初始分数
+  const [initialScores, setInitialScores] = useState<ScoresMap>({});
 
   // 获取本单位所有被考核人
   useEffect(() => {
     if (user?.department_id) {
       axios.get(`${API_BASE}/api/person?department_id=${user.department_id}`)
-        .then(res => setTargets((res.data as Target[])))
+        .then(res => {
+          if (Array.isArray(res.data)) {
+            setTargets(res.data);
+          } else if (Array.isArray(res.data.data)) {
+            setTargets(res.data.data);
+          } else {
+            setTargets([]);
+          }
+        })
         .catch(() => message.error('获取被考核人失败'));
     }
   }, [user]);
@@ -85,11 +95,11 @@ const Score: React.FC = () => {
     }
   }, [scores, targets, indicators, excellentLimit]);
 
-  // 加载已保存分数
+  // 加载已保存分数时，记录初始分数
   useEffect(() => {
     if (user?.code && indicators.length && targets.length) {
       axios.get(`${API_BASE}/api/score/self`, {
-        params: { code_id: user.code, year: new Date().getFullYear() + 1 }
+        params: { evaluator_code: user.code }
       }).then(res => {
         const map: ScoresMap = {};
         for (const row of res.data as any[]) {
@@ -97,47 +107,72 @@ const Score: React.FC = () => {
           map[row.person_id][row.indicator_id] = row.score;
         }
         setScores(map);
+        setInitialScores(map); // 记录初始分数
       });
     }
   }, [user, indicators, targets]);
 
+  // 新增：获取有修改的分数
+  const getChangedScores = () => {
+    const changed: any[] = [];
+    targets.forEach(target => {
+      indicators.forEach(ind => {
+        const tKey = String(target.id);
+        const newVal = scores[tKey]?.[ind.id];
+        const oldVal = initialScores[tKey]?.[ind.id];
+        if (
+          newVal !== undefined &&
+          newVal !== null &&
+          String(newVal).trim() !== '' &&
+          String(newVal) !== String(oldVal)
+        ) {
+          changed.push({
+            evaluator_code: user!.code,
+            person_id: target.id,
+            indicator_id: ind.id,
+            score: newVal,
+            task_id: 1,
+            level: '一般',
+            comment: null
+          });
+        }
+      });
+    });
+    return changed;
+  };
+
+  // 批量提交打分
+  const submitBatchScores = async () => {
+    const changedScores = getChangedScores();
+    if (changedScores.length === 0) return;
+    await axios.post(`${API_BASE}/api/score/batch`, { scores: changedScores });
+  };
+
   // 分数变更
-  const handleScoreChange = (targetCode: string, indicatorId: number, value: number) => {
+  const handleScoreChange = (targetCode: string | number, indicatorId: number, value: number | string | null) => {
+    const tKey = String(targetCode);
     setScores(prev => ({
       ...prev,
-      [targetCode]: {
-        ...(prev[targetCode] || {}),
-        [indicatorId]: value
+      [tKey]: {
+        ...(prev[tKey] || {}),
+        [indicatorId]: value === null ? 0 : Number(value)
       }
     }));
   };
 
-  // 判断是否全部打完分
   const allFilled = targets.length > 0 && indicators.length > 0 && targets.every(target =>
-    indicators.every(ind => typeof scores[target.id]?.[ind.id] === 'number')
+    indicators.every(ind => {
+      const val = scores[String(target.id)]?.[ind.id];
+      return val !== undefined && val !== null && String(val).trim() !== '';
+    })
   );
 
-  // 提交打分
+  // 修改 handleSubmit
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      for (const target of targets) {
-        for (const indicator of indicators) {
-          const score = scores[target.id]?.[indicator.id];
-          if (score == null) continue;
-          await axios.post(`${API_BASE}/api/score`, {
-            code_id: user!.code,
-            person_id: target.id,
-            indicator_id: indicator.id,
-            score,
-            year: new Date().getFullYear() + 1 // 例如2025
-          });
-        }
-      }
-      
-      // 标记考核码为已使用
+      await submitBatchScores();
       await axios.post(`${API_BASE}/api/mark-used`, { code: user!.code });
-      
       message.success('打分成功，考核码已标记为已使用');
       setScores({});
       logout();
@@ -149,26 +184,13 @@ const Score: React.FC = () => {
     }
   };
 
-  // 暂存退出逻辑
+  // 修改 handleExit
   const handleExit = async () => {
     setExitLoading(true);
     try {
-      for (const target of targets) {
-        for (const indicator of indicators) {
-          const score = scores[target.id]?.[indicator.id];
-          if (score == null) continue;
-          await axios.post(`${API_BASE}/api/score`, {
-            code_id: user!.code,
-            person_id: target.id,
-            indicator_id: indicator.id,
-            score,
-            year: new Date().getFullYear() + 1
-          });
-        }
-      }
-    } catch {
-      // 可选：message.error('暂存失败');
-    } finally {
+      await submitBatchScores();
+    } catch {}
+    finally {
       setExitLoading(false);
       logout();
       navigate('/login');
@@ -244,8 +266,8 @@ const Score: React.FC = () => {
               <InputNumber
                 min={0}
                 max={ind.max_score}
-                value={scores[target.id]?.[ind.id]}
-                onChange={val => handleScoreChange(String(target.id), ind.id, val)}
+                value={scores[String(target.id)]?.[ind.id]}
+                onChange={val => handleScoreChange(target.id, ind.id, typeof val === 'number' ? val : 0)}
                 style={{ width: 80 }}
                 placeholder={`满分${ind.max_score}`}
               />

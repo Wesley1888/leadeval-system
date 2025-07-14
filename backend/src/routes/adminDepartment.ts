@@ -1,12 +1,40 @@
 import { Router } from 'express';
-import { getDepartments, addDepartment, updateDepartment, deleteDepartment } from '../controllers/adminDepartmentController';
+import { 
+  getDepartments, 
+  getDepartmentTree,
+  getDepartment,
+  createDepartment, 
+  updateDepartment, 
+  deleteDepartment,
+  getDepartmentStats,
+  importDepartments
+} from '../controllers/adminDepartmentController';
 import adminAuth from '../middleware/auth';
 
 const router = Router();
 
+// 获取部门列表
 router.get('/', adminAuth, getDepartments);
-router.post('/', adminAuth, addDepartment);
+
+// 获取部门树形结构
+router.get('/tree', adminAuth, getDepartmentTree);
+
+// 获取单个部门详情
+router.get('/:id', adminAuth, getDepartment);
+
+// 创建部门
+router.post('/', adminAuth, createDepartment);
+
+// 更新部门
 router.put('/:id', adminAuth, updateDepartment);
+
+// 删除部门
 router.delete('/:id', adminAuth, deleteDepartment);
+
+// 获取部门统计信息
+router.get('/stats/overview', adminAuth, getDepartmentStats);
+
+// 批量导入部门
+router.post('/import', adminAuth, importDepartments);
 
 export default router; 

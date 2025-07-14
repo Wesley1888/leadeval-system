@@ -6,9 +6,9 @@ export const getPersons = async (req: Request, res: Response): Promise<void> => 
   try {
     let rows;
     if (department_id) {
-      [rows] = await db.query('SELECT id, name, department_id FROM person WHERE department_id = ?', [department_id]) as [any[], any];
+      [rows] = await db.query('SELECT id, name, department_id FROM persons WHERE department_id = ?', [department_id]) as [any[], any];
     } else {
-      [rows] = await db.query('SELECT id, name, department_id FROM person') as [any[], any];
+      [rows] = await db.query('SELECT id, name, department_id FROM persons') as [any[], any];
     }
     res.json({ success: true, data: rows });
     return void 0;
@@ -25,7 +25,7 @@ export const addPerson = async (req: Request, res: Response): Promise<void> => {
     return void 0;
   }
   try {
-    const [result] = await db.query('INSERT INTO person (name, department_id) VALUES (?, ?)', [name, department_id]) as [any, any];
+    const [result] = await db.query('INSERT INTO persons (name, department_id) VALUES (?, ?)', [name, department_id]) as [any, any];
     res.json({ success: true, id: result.insertId });
     return void 0;
   } catch (err) {
@@ -42,7 +42,7 @@ export const updatePerson = async (req: Request, res: Response): Promise<void> =
     return void 0;
   }
   try {
-    await db.query('UPDATE person SET name = ?, department_id = ? WHERE id = ?', [name, department_id, id]);
+    await db.query('UPDATE persons SET name = ?, department_id = ? WHERE id = ?', [name, department_id, id]);
     res.json({ success: true });
     return void 0;
   } catch (err) {
@@ -54,7 +54,7 @@ export const updatePerson = async (req: Request, res: Response): Promise<void> =
 export const deletePerson = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   try {
-    await db.query('DELETE FROM person WHERE id = ?', [id]);
+    await db.query('DELETE FROM persons WHERE id = ?', [id]);
     res.json({ success: true });
     return void 0;
   } catch (err) {

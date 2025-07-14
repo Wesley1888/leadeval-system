@@ -22,7 +22,11 @@ const Login: React.FC = () => {
     try {
       const res = await axios.post<any>(`${API_BASE}/api/login`, { code: values.code });
       message.success('登录成功');
-      setUser({ code: res.data.user.code, department_id: res.data.user.department_id });
+      setUser({ 
+        code: res.data.user.code, 
+        department_id: res.data.user.department_id,
+        token: res.data.token || res.data.user.token // 保存token
+      });
       // 如果有重定向路径，则导航到该路径，否则导航到评分页面
       const from = location.state?.from?.pathname || '/score';
       navigate(from, { replace: true });

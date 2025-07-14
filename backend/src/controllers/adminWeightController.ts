@@ -7,7 +7,7 @@ export const getWeights = async (req: Request, res: Response): Promise<void> => 
     const [rows] = await db.query(`
       SELECT w.*, d.name as department_name 
       FROM weight w 
-      LEFT JOIN department d ON w.department_id = d.id 
+      LEFT JOIN departments d ON w.department_id = d.id 
       WHERE w.year = ?
       ORDER BY w.department_id, w.role
     `, [year]) as [any[], any];

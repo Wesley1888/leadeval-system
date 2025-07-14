@@ -43,7 +43,7 @@ const StatResult: React.FC = () => {
   const fetchStat = async (departmentId?: number) => {
     setLoading(true);
     try {
-      const params: any = { year: new Date().getFullYear() + 1 };
+      const params: any = {};
       if (departmentId) params.department_id = departmentId;
       const res = await axios.get(`${API_BASE}/api/score/stat`, {
         headers: { Authorization: `Bearer ${admin?.token}` },
@@ -84,7 +84,7 @@ const StatResult: React.FC = () => {
   // 导出Excel
   const handleExport = async () => {
     try {
-      const params: any = { year: new Date().getFullYear() + 1 };
+      const params: any = {};
       if (filterDept) params.department_id = filterDept;
       const res = await axios.get(`${API_BASE}/api/score/export`, {
         headers: { Authorization: `Bearer ${admin?.token}` },

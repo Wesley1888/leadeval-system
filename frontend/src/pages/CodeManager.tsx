@@ -1,28 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, InputNumber, Select, Tag, message } from 'antd';
+import {
+  Card,
+  Table,
+  Button,
+  InputNumber,
+  Select,
+  Tag,
+  message
+} from 'antd';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Department {
   id: number;
   name: string;
+  code?: string;
+  type: string;
 }
-interface Code {
-  id: string;
+
+interface EvaluationCode {
+  id: number;
+  code: string;
   department_id: number;
-  role: string;
-  used: boolean;
+  department_name?: string;
+  evaluator_type: string;
+  weight: number;
+  status: number; // 1=未用, 2=已用, 0=禁用
+  used_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const CodeManager: React.FC = () => {
   const { admin } = useAuth();
-  const [codes, setCodes] = useState<Code[]>([]);
+  const [codes, setCodes] = useState<EvaluationCode[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [genDept, setGenDept] = useState<number | undefined>(undefined);
-  const [genRole, setGenRole] = useState<string>('一般员工');
-  const [genCount, setGenCount] = useState<number>(1);
-  const [filterDept, setFilterDept] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+
+  // 添加缺失的状态变量
+  const [filterDept, setFilterDept] = useState<number | undefined>(undefined);
+  const [genDept, setGenDept] = useState<number | undefined>(undefined);
+  const [genRole, setGenRole] = useState<string>('总经理');
+  const [genCount, setGenCount] = useState<number>(1);
+  const [genWeight, setGenWeight] = useState<number>(1);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 50, total: 0 });
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
@@ -32,20 +53,24 @@ const CodeManager: React.FC = () => {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
       setDepartments(res.data.data || []);
-      if (!genDept && res.data.data.length > 0) setGenDept(res.data.data[0].id);
     } catch (err: any) {
       message.error(err.response?.data?.message || '获取部门失败');
     }
   };
 
-  const fetchCodes = async (departmentId?: number) => {
+  const fetchCodes = async (page = 1, pageSize = 50) => {
     setLoading(true);
     try {
-      const url = departmentId ? `${API_BASE}/api/admin/code?department_id=${departmentId}` : `${API_BASE}/api/admin/code`;
+      const url = filterDept ? `${API_BASE}/api/admin/code?department_id=${filterDept}&page=${page}&limit=${pageSize}` : `${API_BASE}/api/admin/code?page=${page}&limit=${pageSize}`;
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
       setCodes(res.data.data || []);
+      setPagination({
+        current: page,
+        pageSize,
+        total: res.data.total || 0
+      });
     } catch (err: any) {
       message.error(err.response?.data?.message || '获取考核码失败');
     } finally {
@@ -72,7 +97,8 @@ const CodeManager: React.FC = () => {
     try {
       await axios.post(`${API_BASE}/api/admin/code/generate`, {
         department_id: genDept,
-        role: genRole,
+        evaluator_type: genRole, // 参数名与后端一致
+        weight: genWeight,
         count: genCount
       }, {
         headers: { Authorization: `Bearer ${admin?.token}` }
@@ -85,7 +111,8 @@ const CodeManager: React.FC = () => {
   };
 
   const columns = [
-    { title: '考核码', dataIndex: 'id', key: 'id' },
+    { title: 'ID', dataIndex: 'id', key: 'id' },
+    { title: '考核码', dataIndex: 'code', key: 'code' },
     {
       title: '部门',
       dataIndex: 'department_id',
@@ -94,15 +121,38 @@ const CodeManager: React.FC = () => {
     },
     {
       title: '角色',
-      dataIndex: 'role',
-      key: 'role',
+      dataIndex: 'evaluator_type',
+      key: 'evaluator_type',
       render: (role: string) => <Tag color="blue">{role}</Tag>
     },
     {
-      title: '使用状态',
-      dataIndex: 'used',
-      key: 'used',
-      render: (used: boolean) => used ? <Tag color="red">已用</Tag> : <Tag color="green">未用</Tag>
+      title: '权重',
+      dataIndex: 'weight',
+      key: 'weight',
+      render: (w: number) => w
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: number) => {
+        if (status === 2) return <Tag color="red">已用</Tag>;
+        if (status === 1) return <Tag color="green">未用</Tag>;
+        if (status === 0) return <Tag color="gray">禁用</Tag>;
+        return status;
+      }
+    },
+    {
+      title: '使用时间',
+      dataIndex: 'used_at',
+      key: 'used_at',
+      render: (t?: string) => t ? t.replace('T', ' ').slice(0, 19) : '-'
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (t: string) => t.replace('T', ' ').slice(0, 19)
     }
   ];
 
@@ -122,6 +172,8 @@ const CodeManager: React.FC = () => {
         </Select>
         <span>生成数量：</span>
         <InputNumber min={1} max={100} value={genCount} onChange={v => setGenCount(v || 1)} />
+        <span>权重：</span>
+        <InputNumber min={0} max={10} value={genWeight} onChange={v => setGenWeight(v || 0)} />
         <Button type="primary" onClick={handleGenerate}>生成考核码</Button>
       </div>
       <div style={{ marginBottom: 16 }}>
@@ -136,7 +188,18 @@ const CodeManager: React.FC = () => {
           {departments.map(d => <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>)}
         </Select>
       </div>
-      <Table rowKey="id" columns={columns} dataSource={codes} loading={loading} pagination={{ pageSize: 50 }} />
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={codes}
+        loading={loading}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          onChange: (page, pageSize) => fetchCodes(page, pageSize)
+        }}
+      />
     </Card>
   );
 };

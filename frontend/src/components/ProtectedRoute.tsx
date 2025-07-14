@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireUser = false, 
   requireAdmin = false 
 }) => {
-  const { user, admin, loading } = useAuth();
+  const { user, admin, loading, checkTokenExpiry } = useAuth();
   const location = useLocation();
 
   // 如果还在加载中，显示加载指示器
@@ -35,6 +35,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 如果不需要认证，直接渲染
   if (!requireUser && !requireAdmin) {
     return <>{children}</>;
+  }
+
+  // 检查token是否过期
+  if (checkTokenExpiry()) {
+    if (requireAdmin) {
+      return <Navigate to="/admin/login" state={{ from: location }} replace />;
+    } else {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
   }
 
   // 如果需要用户认证但没有用户

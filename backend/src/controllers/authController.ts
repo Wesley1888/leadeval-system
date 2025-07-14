@@ -12,7 +12,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     return;
   }
   try {
-    const [rows] = await db.query('SELECT * FROM code WHERE id = ?', [code]) as [any[], any];
+    const [rows] = await db.query('SELECT * FROM evaluation_codes WHERE code = ?', [code]) as [any[], any];
     if (rows.length === 0) {
       res.status(401).json({ success: false, message: '考核码不存在' });
       return;
@@ -20,16 +20,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const codeRow = rows[0];
     
     // 检查考核码是否已被使用
-    if (codeRow.used === 1) {
+    if (codeRow.status === 2) {
       res.status(401).json({ success: false, message: '该考核码已完成打分，无法再次使用' });
       return;
     }
-    
+    // 生成token
+    const token = jwt.sign({ code: codeRow.code, department_id: codeRow.department_id }, SECRET, { expiresIn: '2h' });
     res.json({
       success: true,
       message: '登录成功',
+      token,
       user: {
-        code: codeRow.id,
+        code: codeRow.code,
         department_id: codeRow.department_id
       }
     });
@@ -45,7 +47,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
     return;
   }
   try {
-    const [rows] = await db.query('SELECT * FROM admin WHERE name = ?', [name]) as [any[], any];
+    const [rows] = await db.query('SELECT * FROM admins WHERE name = ?', [name]) as [any[], any];
     if (rows.length === 0) {
       res.status(401).json({ success: false, message: '账号不存在' });
       return;
@@ -78,7 +80,7 @@ export const markCodeAsUsed = async (req: Request, res: Response): Promise<void>
     return;
   }
   try {
-    const [result] = await db.query('UPDATE code SET used = 1 WHERE id = ?', [code]) as [any, any];
+    const [result] = await db.query('UPDATE evaluation_codes SET status = 2 WHERE code = ?', [code]) as [any, any];
     if (result.affectedRows === 0) {
       res.status(404).json({ success: false, message: '考核码不存在' });
       return;
