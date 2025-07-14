@@ -12,10 +12,16 @@ interface Target {
 }
 
 // 指标类型
-interface Indicator {
+interface EvaluationIndicator {
   id: number;
   name: string;
-  [key: string]: any;
+  category: string;
+  weight: number;
+  description?: string;
+  status: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 type ScoresMap = {
@@ -36,7 +42,7 @@ const Score: React.FC = () => {
   const navigate = useNavigate();
   const cardPaddingTop = 48; // 固定值，因为现在有固定的顶部导航
   const [targets, setTargets] = useState<Target[]>([]);
-  const [indicators, setIndicators] = useState<Indicator[]>([]);
+  const [indicators, setIndicators] = useState<EvaluationIndicator[]>([]);
   const [scores, setScores] = useState<ScoresMap>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [excellentLimit, setExcellentLimit] = useState<{ excellentScore: number; maxExcellent: number }>({ excellentScore: 90, maxExcellent: 3 });
@@ -265,11 +271,16 @@ const Score: React.FC = () => {
             >
               <InputNumber
                 min={0}
-                max={ind.max_score}
+                max={ind.weight}
                 value={scores[String(target.id)]?.[ind.id]}
                 onChange={val => handleScoreChange(target.id, ind.id, typeof val === 'number' ? val : 0)}
                 style={{ width: 80 }}
-                placeholder={`满分${ind.max_score}`}
+                precision={0}
+                step={1}
+                stringMode={false}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder={`${Math.round(ind.weight)}`}
               />
             </span>
           </Tooltip>
@@ -278,7 +289,6 @@ const Score: React.FC = () => {
     )
   }));
 
-  // 构造表格列
   const columns = [
     {
       title: '姓名',
@@ -296,58 +306,31 @@ const Score: React.FC = () => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f7fa', overflow: 'auto' }}>
-      {/* 顶部导航栏 */}
-      <div style={{ position: 'fixed', top: 24, right: 24, padding: 12, zIndex: 1000, background: 'rgba(255,255,255,0.95)', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-        <span style={{ marginRight: 16 }}>当前考核码：{user!.code}</span>
-        <Button onClick={() => { logout(); navigate('/login'); }}>退出登录</Button>
-      </div>
-      
-      <div style={{
-        maxWidth: 900,
-        margin: '40px auto',
-        marginTop: 100,
-        background: '#fff',
-        padding: 24,
-        paddingTop: cardPaddingTop,
-        borderRadius: 12,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        minHeight: '70vh',
-        position: 'relative',
-        overflowX: 'auto'
-      }}>
-      <h2 style={{ textAlign: 'center', marginBottom: 24, fontWeight: 700, fontSize: 22, color: '#1976a1' }}>中层管理人员考核打分</h2>
-      <Table
-        columns={columns}
-        dataSource={dataSource}
-        pagination={false}
-        bordered
-        scroll={{ x: 'max-content' }}
-        style={{ marginBottom: 16, minWidth: 320 }}
-        size="middle"
+    <div style={{ padding: '0 20px', marginTop: cardPaddingTop }}>
+      <h1>打分系统</h1>
+      <Alert
+        message={`当前优秀分数线: ${excellentLimit.excellentScore}分，允许优秀人数: ${excellentLimit.maxExcellent}人`}
+        type="info"
+        showIcon
       />
-      {/* 按钮区：未全部打完分时只显示暂存退出，全部打完后只显示提交打分 */}
-      {!allFilled ? (
-        <Button
-          type="default"
-          block
-          onClick={handleExit}
-          loading={exitLoading}
-          style={{ background: '#faad14', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, borderRadius: 8, marginBottom: 8 }}
-        >
-          暂存退出
+      <Table
+        dataSource={dataSource}
+        columns={columns}
+        pagination={false}
+        loading={loading || exitLoading}
+        rowKey="key"
+        bordered
+      />
+      <div style={{ marginTop: 20, textAlign: 'right' }}>
+        <Button onClick={handleExit} loading={exitLoading} danger>
+          退出
         </Button>
-      ) : (
-        <Button type="primary" block onClick={handleSubmit} loading={loading} disabled={excellentCount > excellentLimit.maxExcellent} style={{ fontWeight: 600, fontSize: 16, borderRadius: 8, marginBottom: 8 }}>
-          提交并完成退出
+        <Button onClick={handleSubmit} loading={loading} style={{ marginLeft: 10 }} disabled={!allFilled}>
+          提交打分
         </Button>
-      )}
-      {excellentCount > excellentLimit.maxExcellent && (
-        <Alert type="error" showIcon style={{marginTop:8}} message={`优秀人数已超出限制（最多${excellentLimit.maxExcellent}人，当前${excellentCount}人）`} />
-      )}
       </div>
     </div>
   );
 };
 
-export default Score; 
+export default Score;
