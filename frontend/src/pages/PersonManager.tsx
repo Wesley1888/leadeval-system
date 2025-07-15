@@ -70,7 +70,7 @@ const PersonManager: React.FC = () => {
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 50,
     total: 0,
     showSizeChanger: true,
     showQuickJumper: true,
@@ -96,7 +96,7 @@ const PersonManager: React.FC = () => {
     }
   };
 
-  const fetchPersons = async (page = 1, pageSize = 10) => {
+  const fetchPersons = async (page = 1, pageSize = 50) => {
     setLoading(true);
     try {
       const params = {
@@ -189,7 +189,7 @@ const PersonManager: React.FC = () => {
   };
 
   const handleSearch = () => {
-    fetchPersons(1, pagination.pageSize);
+    fetchPersons(1, 50);
   };
 
   const handleReset = () => {
@@ -198,7 +198,7 @@ const PersonManager: React.FC = () => {
       department_id: undefined,
       status: undefined
     });
-    fetchPersons(1, pagination.pageSize);
+    fetchPersons(1, 50);
   };
 
   const handleTableChange = (pagination: any) => {

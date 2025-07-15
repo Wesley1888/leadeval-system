@@ -7,7 +7,8 @@ import {
   updateDepartment, 
   deleteDepartment,
   getDepartmentStats,
-  importDepartments
+  importDepartments,
+  getMaxDepartmentCode
 } from '../controllers/adminDepartmentController';
 import adminAuth from '../middleware/auth';
 
@@ -19,7 +20,10 @@ router.get('/', adminAuth, getDepartments);
 // 获取部门树形结构
 router.get('/tree', adminAuth, getDepartmentTree);
 
-// 获取单个部门详情
+// 获取最大部门编码
+router.get('/max-code', adminAuth, getMaxDepartmentCode);
+
+// 获取单个部门详情（必须放在 /max-code 之后）
 router.get('/:id', adminAuth, getDepartment);
 
 // 创建部门

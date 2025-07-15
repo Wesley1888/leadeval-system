@@ -151,7 +151,7 @@ export const getScoreStat = async (req, res) => {
         };
       }
       statMap[row.person_id].scores[row.indicator_id] = row.score;
-      statMap[row.person_id].total += row.score;
+      statMap[row.person_id].total += Number(row.score)||0;
     }
     // 计算平均分
     const result = Object.values(statMap).map(item => {

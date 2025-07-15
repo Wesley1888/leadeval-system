@@ -46,7 +46,13 @@ export const getDepartments = async (req: Request, res: Response): Promise<void>
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     // 获取分页数据
-    query += ` ORDER BY d.level, d.name LIMIT ? OFFSET ?`;
+    let sortBy = req.query.sort_by || '';
+    let order = (req.query.order === 'desc' ? 'DESC' : 'ASC');
+    if (sortBy === 'code') {
+      query += ` ORDER BY d.code ${order} LIMIT ? OFFSET ?`;
+    } else {
+      query += ` ORDER BY d.level, d.name LIMIT ? OFFSET ?`;
+    }
     params.push(parseInt(limit as string), offset);
 
     const [rows] = await db.query(query, params) as [any[], any];
@@ -75,7 +81,7 @@ export const getDepartmentTree = async (req: Request, res: Response): Promise<vo
       FROM departments d 
       LEFT JOIN departments p ON d.parent_id = p.id 
       WHERE d.status = 1
-      ORDER BY d.level, d.name
+      ORDER BY d.code
     `) as [any[], any];
 
     // 构建树形结构
@@ -325,6 +331,15 @@ export const importDepartments = async (req: Request, res: Response): Promise<vo
     });
   } catch (err) {
     console.error('批量导入部门错误:', err);
+    res.status(500).json({ message: '服务器错误' });
+  }
+}; 
+
+export const getMaxDepartmentCode = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const [rows] = await db.query('SELECT MAX(code) as maxCode FROM departments');
+    res.json({ maxCode: rows[0].maxCode || '00000' });
+  } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
 }; 

@@ -57,10 +57,10 @@ const AdminPanel: React.FC = () => {
           axios.get(`${API_BASE}/api/admin/person`, { headers: { Authorization: `Bearer ${admin?.token}` } }),
           axios.get(`${API_BASE}/api/task`, { headers: { Authorization: `Bearer ${admin?.token}` } })
         ]);
-        const department = deptRes.data.data?.length || 0;
-        const person = personRes.data.data?.length || 0;
+        const department = deptRes.data.total || deptRes.data.data?.length || 0;
+        const person = personRes.data.total || personRes.data.data?.length || 0;
         const taskList = taskRes.data.data || [];
-        const task = taskList.length;
+        const task = taskRes.data.total || taskList.length;
         const todo = taskList.filter((t: any) => t.status !== '已完成').length;
         setDashboardStats({ department, person, task, todo });
       } catch {

@@ -64,7 +64,7 @@ const DepartmentManager: React.FC = () => {
   const [viewMode, setViewMode] = useState<'list' | 'tree'>('list');
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 50,
     total: 0,
     showSizeChanger: true,
     showQuickJumper: true,
@@ -76,16 +76,20 @@ const DepartmentManager: React.FC = () => {
     type: undefined as string | undefined,
     status: undefined as number | undefined
   });
+  // 新增：根据层级动态过滤上级部门可选项
+  const [parentOptions, setParentOptions] = useState<Department[]>([]);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
-  const fetchDepartments = async (page = 1, pageSize = 10) => {
+  const fetchDepartments = async (page = 1, pageSize = 50) => {
     setLoading(true);
     try {
       const params = {
         page,
         limit: pageSize,
-        ...searchParams
+        ...searchParams,
+        sort_by: 'code',
+        order: 'asc',
       };
 
       const res = await axios.get(`${API_BASE}/api/admin/department`, {
@@ -130,10 +134,20 @@ const DepartmentManager: React.FC = () => {
     // eslint-disable-next-line
   }, [admin, viewMode]);
 
-  const handleAdd = () => {
-    setEditing(null);
-    form.resetFields();
-    setModalOpen(true);
+  const handleAdd = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/department/max-code`, {
+        headers: { Authorization: `Bearer ${admin?.token}` }
+      });
+      const maxCode = parseInt(res.data.maxCode || '0', 10);
+      const nextCode = String(maxCode + 100).padStart(5, '0');
+      setEditing(null);
+      form.setFieldsValue({ code: nextCode });
+      form.resetFields(['name', 'parent_id', 'level', 'type', 'status']);
+      setModalOpen(true);
+    } catch {
+      message.error('获取最大部门编码失败');
+    }
   };
 
   const handleEdit = (dept: Department) => {
@@ -214,22 +228,16 @@ const DepartmentManager: React.FC = () => {
       width: 200
     },
     {
-      title: '部门编码',
-      dataIndex: 'code',
-      key: 'code',
-      width: 120
-    },
-    {
-      title: '上级部门',
-      dataIndex: 'parent_name',
-      key: 'parent_name',
-      width: 150
-    },
-    {
       title: '层级',
       dataIndex: 'level',
       key: 'level',
-      width: 80
+      width: 80,
+      render: (level: number) => {
+        if (level === 1) return '一级部门';
+        if (level === 2) return '二级部门';
+        if (level === 3) return '三级部门';
+        return level;
+      }
     },
     {
       title: '部门类型',
@@ -315,6 +323,41 @@ const DepartmentManager: React.FC = () => {
       children: item.children ? renderTreeData(item.children) : undefined
     }));
   };
+
+  // 监听层级变化，动态设置上级部门可选项
+  const handleLevelChange = (level: number) => {
+    if (level === 1) {
+      setParentOptions([]);
+      form.setFieldsValue({ parent_id: undefined });
+    } else if (level === 2) {
+      setParentOptions(departments.filter(dep => dep.level === 1));
+      form.setFieldsValue({ parent_id: undefined });
+    } else if (level === 3) {
+      setParentOptions(departments.filter(dep => dep.level === 2));
+      form.setFieldsValue({ parent_id: undefined });
+    } else {
+      setParentOptions([]);
+      form.setFieldsValue({ parent_id: undefined });
+    }
+  };
+
+  // 初始化编辑时的上级部门选项
+  useEffect(() => {
+    if (modalOpen) {
+      const level = form.getFieldValue('level');
+      handleLevelChange(level);
+    }
+    // eslint-disable-next-line
+  }, [modalOpen]);
+
+  // 计算所有一级部门id用于树形视图默认展开（受控模式）
+  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
+  useEffect(() => {
+    if (viewMode === 'tree' && departmentTree.length > 0) {
+      const keys = departmentTree.filter(dep => dep.level === 1).map(dep => dep.id);
+      setExpandedKeys(keys);
+    }
+  }, [departmentTree, viewMode]);
 
   return (
     <Card
@@ -411,6 +454,8 @@ const DepartmentManager: React.FC = () => {
             pagination={pagination}
             onChange={handleTableChange}
             scroll={{ x: 1200 }}
+            // 默认按code排序
+            // sorted by columns sorter
           />
         </>
       )}
@@ -418,7 +463,8 @@ const DepartmentManager: React.FC = () => {
       {viewMode === 'tree' && (
         <Tree
           showLine
-          defaultExpandAll
+          expandedKeys={expandedKeys}
+          onExpand={setExpandedKeys}
           treeData={renderTreeData(departmentTree)}
         />
       )}
@@ -453,8 +499,8 @@ const DepartmentManager: React.FC = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="parent_id" label="上级部门">
-                <Select allowClear placeholder="请选择上级部门">
-                  {departments.map(d => (
+                <Select allowClear placeholder="请选择上级部门" disabled={parentOptions.length === 0}>
+                  {parentOptions.map(d => (
                     <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
                   ))}
                 </Select>
@@ -466,7 +512,7 @@ const DepartmentManager: React.FC = () => {
                 label="部门层级"
                 initialValue={1}
               >
-                <Select>
+                <Select onChange={handleLevelChange}>
                   <Select.Option value={1}>一级部门</Select.Option>
                   <Select.Option value={2}>二级部门</Select.Option>
                   <Select.Option value={3}>三级部门</Select.Option>
