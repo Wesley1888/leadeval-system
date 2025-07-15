@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface Target {
   id: number;
   name: string;
+  current_position?: string;
   [key: string]: any;
 }
 
@@ -109,13 +110,15 @@ const Score: React.FC = () => {
       }).then(res => {
         const map: ScoresMap = {};
         for (const row of res.data as any[]) {
-          if (!map[row.person_id]) map[row.person_id] = {};
-          map[row.person_id][row.indicator_id] = row.score;
+          const pid = String(row.person_id);
+          if (!map[pid]) map[pid] = {};
+          map[pid][row.indicator_id] = row.score;
         }
-        setScores(map);
-        setInitialScores(map); // 记录初始分数
+        setScores(JSON.parse(JSON.stringify(map)));
+        setInitialScores(JSON.parse(JSON.stringify(map)));
       });
     }
+    // 只在user、indicators、targets变化时加载分数，避免targets变化导致分数被重置为0
   }, [user, indicators, targets]);
 
   // 新增：获取有修改的分数
@@ -237,57 +240,68 @@ const Score: React.FC = () => {
   };
 
   // 构造表格数据
-  const dataSource = targets.map(target => ({
-    key: target.id,
-    name: target.name,
-    ...Object.fromEntries(
-      indicators.map(ind => {
-        const tooltipKey = `${target.id}_${ind.id}`;
-        return [
-          `indicator_${ind.id}`,
-          <Tooltip
-            key={tooltipKey}
-            title={
-              <div
-                onMouseEnter={() => handleTooltipContentEnter(tooltipKey)}
-                onMouseLeave={() => handleTooltipContentLeave(tooltipKey)}
-              >
-                {fixedScores.map(fs => (
-                  <Button
-                    key={fs}
-                    size="small"
-                    style={{ margin: '0 2px', minWidth: 30, textAlign: 'center', padding: '0 4px', fontWeight: 600 }}
-                    onClick={() => handleScoreChange(String(target.id), ind.id, fs)}
-                  >{fs}</Button>
-                ))}
-              </div>
-            }
-            open={tooltipOpen[tooltipKey]}
-            onOpenChange={visible => handleTooltipVisible(tooltipKey, visible)}
-          >
-            <span
-              onMouseEnter={() => handleTooltipVisible(tooltipKey, true)}
-              onMouseLeave={() => handleTooltipVisible(tooltipKey, false)}
+  const dataSource = targets.map(target => {
+    // 计算总分
+    const totalScore = indicators.reduce((sum, ind) => {
+      const score = scores[String(target.id)]?.[ind.id];
+      // console.log('Loaded scores map:', score, 'Type:', typeof score);
+      return sum + (score !== undefined && score !== null && String(score).trim() !== '' ? Number(score) : 0);
+    }, 0);
+
+    return {
+      key: target.id,
+      name: target.name,
+      position: target.current_position || '未设置',
+      total: totalScore,
+      ...Object.fromEntries(
+        indicators.map(ind => {
+          const tooltipKey = `${target.id}_${ind.id}`;
+          return [
+            `indicator_${ind.id}`,
+            <Tooltip
+              key={tooltipKey}
+              title={
+                <div
+                  onMouseEnter={() => handleTooltipContentEnter(tooltipKey)}
+                  onMouseLeave={() => handleTooltipContentLeave(tooltipKey)}
+                >
+                  {fixedScores.map(fs => (
+                    <Button
+                      key={fs}
+                      size="small"
+                      style={{ margin: '0 2px', minWidth: 30, textAlign: 'center', padding: '0 4px', fontWeight: 600 }}
+                      onClick={() => handleScoreChange(String(target.id), ind.id, fs)}
+                    >{fs}</Button>
+                  ))}
+                </div>
+              }
+              open={tooltipOpen[tooltipKey]}
+              onOpenChange={visible => handleTooltipVisible(tooltipKey, visible)}
             >
-              <InputNumber
-                min={0}
-                max={ind.weight}
-                value={scores[String(target.id)]?.[ind.id]}
-                onChange={val => handleScoreChange(target.id, ind.id, typeof val === 'number' ? val : 0)}
-                style={{ width: 80 }}
-                precision={0}
-                step={1}
-                stringMode={false}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder={`${Math.round(ind.weight)}`}
-              />
-            </span>
-          </Tooltip>
-        ];
-      })
-    )
-  }));
+              <span
+                onMouseEnter={() => handleTooltipVisible(tooltipKey, true)}
+                onMouseLeave={() => handleTooltipVisible(tooltipKey, false)}
+              >
+                <InputNumber
+                  min={0}
+                  max={ind.weight}
+                  value={scores[String(target.id)]?.[ind.id]}
+                  onChange={val => handleScoreChange(target.id, ind.id, typeof val === 'number' ? val : 0)}
+                  style={{ width: 80 }}
+                  precision={0}
+                  step={1}
+                  stringMode={false}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder={`${Math.round(ind.weight)}`}
+                />
+              </span>
+            </Tooltip>
+          ];
+        })
+      )
+    };
+  });
 
   const columns = [
     {
@@ -297,12 +311,41 @@ const Score: React.FC = () => {
       fixed: 'left' as const,
       width: 100
     },
+    {
+      title: '职务',
+      dataIndex: 'position',
+      key: 'position',
+      fixed: 'left' as const,
+      width: 150,
+      ellipsis: true,
+      render: (value: string) => (
+        <Tooltip title={value}>
+          <span>{value}</span>
+        </Tooltip>
+      )
+    },
     ...indicators.map(ind => ({
       title: ind.name,
       dataIndex: `indicator_${ind.id}`,
       key: `indicator_${ind.id}`,
       width: 130
-    }))
+    })),
+    {
+      title: '总分',
+      dataIndex: 'total',
+      key: 'total',
+      fixed: 'right' as const,
+      width: 100,
+      render: (value: number) => (
+        <span style={{ 
+          fontWeight: 'bold', 
+          color: value >= excellentLimit.excellentScore ? '#52c41a' : '#000000',
+          fontSize: '14px'
+        }}>
+          {value}
+        </span>
+      )
+    }
   ];
 
   return (

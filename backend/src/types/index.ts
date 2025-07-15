@@ -33,6 +33,7 @@ export interface Person {
   appointment_date?: string;
   division_of_labor?: string;
   department_id: number;
+  department_name?: string;
   status: number;
   created_at: string;
   updated_at: string;
