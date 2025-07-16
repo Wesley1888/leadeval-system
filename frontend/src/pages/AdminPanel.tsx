@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, Space, Card, List, Typography, Row, Col, Statistic } from 'antd';
+import { Layout, Menu, Button, Space, Card, List, Typography, Row, Col, Statistic, Dropdown } from 'antd';
 import {
   ApartmentOutlined,
   UserOutlined,
@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DepartmentManager from './DepartmentManager';
 import PersonManager from './PersonManager';
 import CodeManager from './CodeManager';
+import ExecutiveCodeManager from './ExecutiveCodeManager';
 import WeightManager from './WeightManager';
 import ProjectTasks from './ProjectTasks';
 import DatabaseManager from './DatabaseManager';
@@ -32,6 +33,16 @@ const AdminPanel: React.FC = () => {
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+
+  // 处理菜单点击
+  const handleMenuClick = ({ key }: { key: string }) => {
+    // 如果点击的是父级菜单，默认选择第一个子菜单
+    if (key === 'code') {
+      setSelectedKey('code-manager');
+    } else {
+      setSelectedKey(key);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -128,8 +139,10 @@ const AdminPanel: React.FC = () => {
     content = <DepartmentManager />;
   } else if (selectedKey === 'person') {
     content = <PersonManager />;
-  } else if (selectedKey === 'code') {
+  } else if (selectedKey === 'code-manager') {
     content = <CodeManager />;
+  } else if (selectedKey === 'executive-code') {
+    content = <ExecutiveCodeManager />;
   } else if (selectedKey === 'weight') {
     content = <WeightManager />;
   } else if (selectedKey === 'stat') {
@@ -178,7 +191,7 @@ const AdminPanel: React.FC = () => {
             mode="inline"
             selectedKeys={[selectedKey]}
             style={{ height: 'calc(100% - 80px)', borderRight: 0 }}
-            onClick={({ key }) => setSelectedKey(key as string)}
+            onClick={handleMenuClick}
             items={[
               {
                 key: 'dashboard',
@@ -193,12 +206,22 @@ const AdminPanel: React.FC = () => {
               {
                 key: 'person',
                 icon: <UserOutlined />, 
-                label: '被考核人管理',
+                label: '人员管理',
               },
               {
                 key: 'code',
                 icon: <KeyOutlined />, 
                 label: '考核码管理',
+                children: [
+                  {
+                    key: 'code-manager',
+                    label: '总览',
+                  },
+                  {
+                    key: 'executive-code',
+                    label: '高层领导',
+                  },
+                ],
               },
               {
                 key: 'weight',

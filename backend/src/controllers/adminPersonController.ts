@@ -10,8 +10,9 @@ export const getPersons = async (req: Request, res: Response): Promise<void> => 
       limit = 10, 
       keyword, 
       department_id, 
-      status 
-    } = req.query as SearchParams & { page?: string; limit?: string };
+      status,
+      title
+    } = req.query as SearchParams & { page?: string; limit?: string; title?: string };
 
     let query = `
       SELECT p.*, d.name as department_name 
@@ -34,6 +35,11 @@ export const getPersons = async (req: Request, res: Response): Promise<void> => 
     if (status !== undefined) {
       query += ` AND p.status = ?`;
       params.push(status);
+    }
+
+    if (title) {
+      query += ` AND p.title = ?`;
+      params.push(title);
     }
 
     // 获取总数

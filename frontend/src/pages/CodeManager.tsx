@@ -115,9 +115,9 @@ const CodeManager: React.FC = () => {
     { title: '考核码', dataIndex: 'code', key: 'code' },
     {
       title: '部门',
-      dataIndex: 'department_id',
-      key: 'department_id',
-      render: (id: number) => departments.find(d => d.id === id)?.name || id
+      dataIndex: 'department_name',
+      key: 'department_name',
+      render: (name: string, record: EvaluationCode) => name || `部门ID: ${record.department_id}`
     },
     {
       title: '角色',

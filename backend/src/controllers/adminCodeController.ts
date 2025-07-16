@@ -340,3 +340,70 @@ export const importEvaluationCodes = async (req: Request, res: Response): Promis
     res.status(500).json({ message: '服务器错误' });
   }
 }; 
+
+// 生成高层考核码
+export const generateExecutiveCodes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // 获取title为"公司领导"的人员列表
+    const [leaderRows] = await db.query(`
+      SELECT id, name, title 
+      FROM persons 
+      WHERE title = '公司领导' AND status = 1
+      ORDER BY id
+    `) as [any[], any];
+
+    console.log('找到的公司领导数量:', leaderRows.length);
+    console.log('公司领导列表:', leaderRows);
+
+    if (leaderRows.length === 0) {
+      res.status(400).json({ message: '未找到公司领导人员' });
+      return;
+    }
+
+    // 删除当年部门ID为1的考核码
+    const currentYear = new Date().getFullYear();
+    const [deleteResult] = await db.query(`
+      DELETE FROM evaluation_codes 
+      WHERE department_id = 1 
+      AND YEAR(created_at) = ?
+    `, [currentYear]) as [any, any];
+
+    const codes: string[] = [];
+    const values: any[] = [];
+
+    // 为每个公司领导生成考核码
+    for (const leader of leaderRows) {
+      const code = generateRandomCode();
+      codes.push(code);
+      values.push([code, 1, leader.name, 1, 1]); // department_id=1, weight=1, status=1
+      console.log(`为 ${leader.name} 生成考核码: ${code}`);
+    }
+
+    if (values.length > 0) {
+      console.log(`准备插入 ${values.length} 个考核码`);
+      const [result] = await db.query(`
+        INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
+        VALUES ?
+      `, [values]) as [any, any];
+
+      console.log(`实际插入 ${result.affectedRows} 个考核码`);
+
+      res.status(201).json({ 
+        message: `成功生成 ${result.affectedRows} 个高层考核码，删除了 ${deleteResult.affectedRows} 个旧考核码`,
+        generated_count: result.affectedRows,
+        deleted_count: deleteResult.affectedRows,
+        codes: codes,
+        leaders: leaderRows.map(l => ({ id: l.id, name: l.name }))
+      });
+    } else {
+      res.json({ 
+        message: '没有需要生成的考核码',
+        generated_count: 0,
+        deleted_count: deleteResult.affectedRows
+      });
+    }
+  } catch (err) {
+    console.error('生成高层考核码错误:', err);
+    res.status(500).json({ message: '服务器错误' });
+  }
+}; 
