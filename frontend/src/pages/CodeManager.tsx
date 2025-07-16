@@ -40,17 +40,25 @@ const CodeManager: React.FC = () => {
   // 添加缺失的状态变量
   const [filterDept, setFilterDept] = useState<number | undefined>(undefined);
   const [genDept, setGenDept] = useState<number | undefined>(undefined);
-  const [genRole, setGenRole] = useState<string>('总经理');
+  const [genRole, setGenRole] = useState<string>('中层管理人员');
   const [genCount, setGenCount] = useState<number>(1);
   const [genWeight, setGenWeight] = useState<number>(1);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 50, total: 0 });
+
+  // 新增：一键生成考核码相关状态
+  const [baseCount, setBaseCount] = useState<number>(10);
+  const [workerCount, setWorkerCount] = useState<number>(50);
+  const [oneKeyLoading, setOneKeyLoading] = useState(false);
+  const [leaders, setLeaders] = useState<any[]>([]);
+  const [generating, setGenerating] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
   const fetchDepartments = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/admin/department`, {
-        headers: { Authorization: `Bearer ${admin?.token}` }
+        headers: { Authorization: `Bearer ${admin?.token}` },
+        params: { limit: 1000 }
       });
       setDepartments(res.data.data || []);
     } catch (err: any) {
@@ -61,9 +69,16 @@ const CodeManager: React.FC = () => {
   const fetchCodes = async (page = 1, pageSize = 50) => {
     setLoading(true);
     try {
-      const url = filterDept ? `${API_BASE}/api/admin/code?department_id=${filterDept}&page=${page}&limit=${pageSize}` : `${API_BASE}/api/admin/code?page=${page}&limit=${pageSize}`;
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${admin?.token}` }
+      const params: any = {
+        page,
+        limit: pageSize,
+        sort_by: 'department_id',
+        order: 'asc',
+      };
+      if (filterDept) params.department_id = filterDept;
+      const res = await axios.get(`${API_BASE}/api/admin/code`, {
+        headers: { Authorization: `Bearer ${admin?.token}` },
+        params
       });
       setCodes(res.data.data || []);
       setPagination({
@@ -78,10 +93,110 @@ const CodeManager: React.FC = () => {
     }
   };
 
+  // 获取公司领导
+  const fetchCompanyLeaders = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/person?title=公司领导&limit=1000`, {
+        headers: { Authorization: `Bearer ${admin?.token}` }
+      });
+      setLeaders(res.data.data || []);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '获取公司领导失败');
+    }
+  };
+
+  // 生成高层考核码
+  const handleGenerateExecutiveCodes = async () => {
+    setGenerating(true);
+    try {
+      const res = await axios.post(`${API_BASE}/api/admin/code/generate-executive`, {}, {
+        headers: { Authorization: `Bearer ${admin?.token}` }
+      });
+      message.success(`${res.data.message} - 预期生成${leaders.length}个，实际生成${res.data.generated_count}个`);
+      setTimeout(() => {
+        fetchCodes();
+        fetchCompanyLeaders();
+      }, 500);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '生成高层考核码失败');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // 一键生成考核码
+  const handleOneKeyGenerate = async () => {
+    setOneKeyLoading(true);
+    try {
+      // 1. 生成高层考核码
+      await handleGenerateExecutiveCodes();
+      // 2. 生成部门id=2的中层管理人员考核码
+      const [personRes, leaderRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/admin/person`, {
+          headers: { Authorization: `Bearer ${admin?.token}` },
+          params: { status: 1, limit: 1000 }
+        }),
+        axios.get(`${API_BASE}/api/admin/person`, {
+          headers: { Authorization: `Bearer ${admin?.token}` },
+          params: { title: '公司领导', status: 1, limit: 1000 }
+        })
+      ]);
+      const allPersons = personRes.data.data || [];
+      const allLeaders = leaderRes.data.data || [];
+      const midCount = allPersons.length - allLeaders.length;
+      if (midCount > 0) {
+        await axios.post(`${API_BASE}/api/admin/code/generate`, {
+          department_id: 2,
+          evaluator_type: '中层管理人员',
+          weight: 1,
+          count: midCount
+        }, {
+          headers: { Authorization: `Bearer ${admin?.token}` }
+        });
+      }
+      // 3. 其他部门生成基层管理人员和职工代表考核码
+      const deptRes = await axios.get(`${API_BASE}/api/admin/department`, {
+        headers: { Authorization: `Bearer ${admin?.token}` },
+        params: { limit: 1000 }
+      });
+      const departments = (deptRes.data.data || []).filter((d: any) => d.id !== 1 && d.id !== 2);
+      for (const dept of departments) {
+        if (baseCount > 0) {
+          await axios.post(`${API_BASE}/api/admin/code/generate`, {
+            department_id: dept.id,
+            evaluator_type: '基层管理人员',
+            weight: 1,
+            count: baseCount
+          }, {
+            headers: { Authorization: `Bearer ${admin?.token}` }
+          });
+        }
+        if (workerCount > 0) {
+          await axios.post(`${API_BASE}/api/admin/code/generate`, {
+            department_id: dept.id,
+            evaluator_type: '职工代表',
+            weight: 1,
+            count: workerCount
+          }, {
+            headers: { Authorization: `Bearer ${admin?.token}` }
+          });
+        }
+      }
+      message.success('一键生成考核码完成！');
+      fetchCodes();
+      fetchCompanyLeaders();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '一键生成考核码失败');
+    } finally {
+      setOneKeyLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (admin) {
       fetchDepartments();
       fetchCodes();
+      fetchCompanyLeaders();
     }
     // eslint-disable-next-line
   }, [admin]);
@@ -158,35 +273,59 @@ const CodeManager: React.FC = () => {
 
   return (
     <Card title="考核码管理">
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <span>选择部门：</span>
-        <Select value={genDept} onChange={setGenDept} style={{ width: 200 }}>
-          {departments.map(d => <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>)}
-        </Select>
-        <span>角色：</span>
-        <Select value={genRole} onChange={setGenRole} style={{ width: 150 }}>
-          <Select.Option value="总经理">总经理</Select.Option>
-          <Select.Option value="党委书记">党委书记</Select.Option>
-          <Select.Option value="正科">正科</Select.Option>
-          <Select.Option value="一般员工">一般员工</Select.Option>
-        </Select>
-        <span>生成数量：</span>
-        <InputNumber min={1} max={100} value={genCount} onChange={v => setGenCount(v || 1)} />
-        <span>权重：</span>
-        <InputNumber min={0} max={10} value={genWeight} onChange={v => setGenWeight(v || 0)} />
-        <Button type="primary" onClick={handleGenerate}>生成考核码</Button>
-      </div>
       <div style={{ marginBottom: 16 }}>
-        <span>筛选部门：</span>
-        <Select
-          allowClear
-          placeholder="全部"
-          value={filterDept}
-          onChange={setFilterDept}
-          style={{ width: 200 }}
-        >
-          {departments.map(d => <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>)}
-        </Select>
+        {/* 批量生成考核码分组 */}
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 500, fontSize: 15 }}>批量生成：</span>
+          <InputNumber min={1} max={100} value={baseCount} onChange={v => setBaseCount(v || 1)} style={{ width: 80 }} />
+          <span>基层管理人员/部门</span>
+          <InputNumber min={1} max={200} value={workerCount} onChange={v => setWorkerCount(v || 1)} style={{ width: 80 }} />
+          <span>职工代表/部门</span>
+          <Button type="primary" loading={oneKeyLoading} onClick={handleOneKeyGenerate}>
+            一键生成考核码
+          </Button>
+          <Button type="primary" icon={null} loading={generating} disabled={leaders.length === 0} onClick={handleGenerateExecutiveCodes}>
+            生成高层考核码 {leaders.length > 0 && `(${leaders.length}人)`}
+          </Button>
+        </div>
+        {/* 单部门生成考核码分组 */}
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 500, fontSize: 15 }}>单部门生成：</span>
+          <span>选择部门：</span>
+          <Select value={genDept} onChange={setGenDept} style={{ width: 200 }}>
+            {departments
+              .slice()
+              .sort((a, b) => (a.code || '').localeCompare(b.code || ''))
+              .map(d => <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>)}
+          </Select>
+          <span>角色：</span>
+          <Select value={genRole} onChange={setGenRole} style={{ width: 150 }}>
+            <Select.Option value="中层管理人员">中层管理人员</Select.Option>
+            <Select.Option value="基层管理人员">基层管理人员</Select.Option>
+            <Select.Option value="职工代表">职工代表</Select.Option>
+          </Select>
+          <span>生成数量：</span>
+          <InputNumber min={1} max={100} value={genCount} onChange={v => setGenCount(v || 1)} />
+          <span>权重：</span>
+          <InputNumber min={0} max={10} value={genWeight} onChange={v => setGenWeight(v || 0)} />
+          <Button type="primary" onClick={handleGenerate}>生成考核码</Button>
+        </div>
+        {/* 筛选分组 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span>筛选部门：</span>
+          <Select
+            allowClear
+            placeholder="全部"
+            value={filterDept}
+            onChange={setFilterDept}
+            style={{ width: 200 }}
+          >
+            {departments
+              .slice()
+              .sort((a, b) => (a.code || '').localeCompare(b.code || ''))
+              .map(d => <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>)}
+          </Select>
+        </div>
       </div>
       <Table
         rowKey="id"

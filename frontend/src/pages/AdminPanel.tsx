@@ -18,7 +18,6 @@ import { useAuth } from '../contexts/AuthContext';
 import DepartmentManager from './DepartmentManager';
 import PersonManager from './PersonManager';
 import CodeManager from './CodeManager';
-import ExecutiveCodeManager from './ExecutiveCodeManager';
 import WeightManager from './WeightManager';
 import ProjectTasks from './ProjectTasks';
 import DatabaseManager from './DatabaseManager';
@@ -36,12 +35,7 @@ const AdminPanel: React.FC = () => {
 
   // 处理菜单点击
   const handleMenuClick = ({ key }: { key: string }) => {
-    // 如果点击的是父级菜单，默认选择第一个子菜单
-    if (key === 'code') {
-      setSelectedKey('code-manager');
-    } else {
-      setSelectedKey(key);
-    }
+    setSelectedKey(key);
   };
 
   const handleLogout = () => {
@@ -139,10 +133,8 @@ const AdminPanel: React.FC = () => {
     content = <DepartmentManager />;
   } else if (selectedKey === 'person') {
     content = <PersonManager />;
-  } else if (selectedKey === 'code-manager') {
+  } else if (selectedKey === 'code') {
     content = <CodeManager />;
-  } else if (selectedKey === 'executive-code') {
-    content = <ExecutiveCodeManager />;
   } else if (selectedKey === 'weight') {
     content = <WeightManager />;
   } else if (selectedKey === 'stat') {
@@ -212,16 +204,6 @@ const AdminPanel: React.FC = () => {
                 key: 'code',
                 icon: <KeyOutlined />, 
                 label: '考核码管理',
-                children: [
-                  {
-                    key: 'code-manager',
-                    label: '总览',
-                  },
-                  {
-                    key: 'executive-code',
-                    label: '高层领导',
-                  },
-                ],
               },
               {
                 key: 'weight',

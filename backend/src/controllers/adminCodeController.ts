@@ -11,8 +11,10 @@ export const getEvaluationCodes = async (req: Request, res: Response): Promise<v
       keyword, 
       department_id, 
       evaluator_type, 
-      status 
-    } = req.query as SearchParams & { page?: string; limit?: string; evaluator_type?: string };
+      status,
+      sort_by,
+      order
+    } = req.query as SearchParams & { page?: string; limit?: string; evaluator_type?: string; sort_by?: string; order?: string };
 
     let query = `
       SELECT ec.*, d.name as department_name
@@ -51,8 +53,16 @@ export const getEvaluationCodes = async (req: Request, res: Response): Promise<v
     const total = countRows[0].total;
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    // 获取分页数据
-    query += ` ORDER BY ec.created_at DESC LIMIT ? OFFSET ?`;
+    // 获取分页数据，支持自定义排序
+    let orderBy = 'ec.created_at DESC';
+    if (sort_by) {
+      const allowed = ['id', 'department_id', 'created_at'];
+      if (allowed.includes(sort_by)) {
+        const ord = order === 'asc' ? 'ASC' : 'DESC';
+        orderBy = `ec.${sort_by} ${ord}`;
+      }
+    }
+    query += ` ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
     params.push(parseInt(limit as string), offset);
 
     const [rows] = await db.query(query, params) as [any[], any];
@@ -233,7 +243,7 @@ export const generateEvaluationCodes = async (req: Request, res: Response): Prom
       count = 1 
     } = req.body;
 
-    if (!department_id || !evaluator_type || count < 1 || count > 100) {
+    if (!department_id || !evaluator_type || count < 1 || count > 5000) {
       res.status(400).json({ message: '参数错误' });
       return;
     }
