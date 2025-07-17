@@ -39,10 +39,6 @@ const CodeManager: React.FC = () => {
 
   // 添加缺失的状态变量
   const [filterDept, setFilterDept] = useState<number | undefined>(undefined);
-  const [genDept, setGenDept] = useState<number | undefined>(undefined);
-  const [genRole, setGenRole] = useState<string>('中层管理人员');
-  const [genCount, setGenCount] = useState<number>(1);
-  const [genWeight, setGenWeight] = useState<number>(1);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 50, total: 0 });
 
   // 新增：一键生成考核码相关状态
@@ -203,27 +199,12 @@ const CodeManager: React.FC = () => {
 
   // 筛选部门时刷新表格
   useEffect(() => {
-    if (admin) fetchCodes(filterDept);
+    if (admin) {
+      setPagination(prev => ({ ...prev, current: 1 }));
+      fetchCodes(1, pagination.pageSize);
+    }
     // eslint-disable-next-line
   }, [filterDept]);
-
-  const handleGenerate = async () => {
-    if (!genDept) return;
-    try {
-      await axios.post(`${API_BASE}/api/admin/code/generate`, {
-        department_id: genDept,
-        evaluator_type: genRole, // 参数名与后端一致
-        weight: genWeight,
-        count: genCount
-      }, {
-        headers: { Authorization: `Bearer ${admin?.token}` }
-      });
-      message.success(`已为${departments.find(d => d.id === genDept)?.name}生成${genCount}个${genRole}考核码`);
-      fetchCodes(filterDept);
-    } catch (err: any) {
-      message.error(err.response?.data?.message || '生成失败');
-    }
-  };
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
@@ -274,41 +255,16 @@ const CodeManager: React.FC = () => {
   return (
     <Card title="考核码管理">
       <div style={{ marginBottom: 16 }}>
-        {/* 批量生成考核码分组 */}
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 500, fontSize: 15 }}>批量生成：</span>
-          <InputNumber min={1} max={100} value={baseCount} onChange={v => setBaseCount(v || 1)} style={{ width: 80 }} />
-          <span>基层管理人员/部门</span>
-          <InputNumber min={1} max={200} value={workerCount} onChange={v => setWorkerCount(v || 1)} style={{ width: 80 }} />
-          <span>职工代表/部门</span>
-          <Button type="primary" loading={oneKeyLoading} onClick={handleOneKeyGenerate}>
+        {/* 一键生成考核码分组 - 优化UI */}
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 500, fontSize: 15 }}>每个部门生成：</span>
+          <InputNumber min={1} max={100} value={baseCount} onChange={v => setBaseCount(v || 1)} style={{ width: 70 }} />
+          <span>个基层管理人员考核码，</span>
+          <InputNumber min={1} max={200} value={workerCount} onChange={v => setWorkerCount(v || 1)} style={{ width: 70 }} />
+          <span>个职工代表考核码</span>
+          <Button type="primary" loading={oneKeyLoading} onClick={handleOneKeyGenerate} style={{ marginLeft: 16 }}>
             一键生成考核码
           </Button>
-          <Button type="primary" icon={null} loading={generating} disabled={leaders.length === 0} onClick={handleGenerateExecutiveCodes}>
-            生成高层考核码 {leaders.length > 0 && `(${leaders.length}人)`}
-          </Button>
-        </div>
-        {/* 单部门生成考核码分组 */}
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 500, fontSize: 15 }}>单部门生成：</span>
-          <span>选择部门：</span>
-          <Select value={genDept} onChange={setGenDept} style={{ width: 200 }}>
-            {departments
-              .slice()
-              .sort((a, b) => (a.code || '').localeCompare(b.code || ''))
-              .map(d => <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>)}
-          </Select>
-          <span>角色：</span>
-          <Select value={genRole} onChange={setGenRole} style={{ width: 150 }}>
-            <Select.Option value="中层管理人员">中层管理人员</Select.Option>
-            <Select.Option value="基层管理人员">基层管理人员</Select.Option>
-            <Select.Option value="职工代表">职工代表</Select.Option>
-          </Select>
-          <span>生成数量：</span>
-          <InputNumber min={1} max={100} value={genCount} onChange={v => setGenCount(v || 1)} />
-          <span>权重：</span>
-          <InputNumber min={0} max={10} value={genWeight} onChange={v => setGenWeight(v || 0)} />
-          <Button type="primary" onClick={handleGenerate}>生成考核码</Button>
         </div>
         {/* 筛选分组 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

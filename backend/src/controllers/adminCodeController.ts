@@ -233,58 +233,6 @@ export const deleteEvaluationCode = async (req: Request, res: Response): Promise
   }
 };
 
-// 批量生成考核码
-export const generateEvaluationCodes = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { 
-      department_id, 
-      evaluator_type, 
-      weight, 
-      count = 1 
-    } = req.body;
-
-    if (!department_id || !evaluator_type || count < 1 || count > 5000) {
-      res.status(400).json({ message: '参数错误' });
-      return;
-    }
-
-    // 验证部门是否存在
-    const [deptRows] = await db.query(
-      'SELECT id FROM departments WHERE id = ?',
-      [department_id]
-    ) as [any[], any];
-
-    if (deptRows.length === 0) {
-      res.status(400).json({ message: '部门不存在' });
-      return;
-    }
-
-    const codes: string[] = [];
-    const values: any[] = [];
-
-    // 生成考核码
-    for (let i = 0; i < count; i++) {
-      const code = generateRandomCode();
-      codes.push(code);
-      values.push([code, department_id, evaluator_type, weight || 0, 1]);
-    }
-
-    const [result] = await db.query(`
-      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
-      VALUES ?
-    `, [values]) as [any, any];
-
-    res.status(201).json({ 
-      message: `成功生成 ${result.affectedRows} 个考核码`,
-      generated_count: result.affectedRows,
-      codes: codes
-    });
-  } catch (err) {
-    console.error('批量生成考核码错误:', err);
-    res.status(500).json({ message: '服务器错误' });
-  }
-};
-
 // 获取考核码统计信息
 export const getEvaluationCodeStats = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -351,6 +299,58 @@ export const importEvaluationCodes = async (req: Request, res: Response): Promis
   }
 }; 
 
+// 批量生成考核码
+export const generateEvaluationCodes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { 
+      department_id, 
+      evaluator_type, 
+      weight, 
+      count = 1 
+    } = req.body;
+
+    if (!department_id || !evaluator_type || count < 1 || count > 5000) {
+      res.status(400).json({ message: '参数错误' });
+      return;
+    }
+
+    // 验证部门是否存在
+    const [deptRows] = await db.query(
+      'SELECT id FROM departments WHERE id = ?',
+      [department_id]
+    ) as [any[], any];
+
+    if (deptRows.length === 0) {
+      res.status(400).json({ message: '部门不存在' });
+      return;
+    }
+
+    const codes: string[] = [];
+    const values: any[] = [];
+
+    // 生成考核码
+    for (let i = 0; i < count; i++) {
+      const code = generateRandomCode();
+      codes.push(code);
+      values.push([code, department_id, evaluator_type, weight || 0, 1]);
+    }
+
+    const [result] = await db.query(`
+      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
+      VALUES ?
+    `, [values]) as [any, any];
+
+    res.status(201).json({ 
+      message: `成功生成 ${result.affectedRows} 个考核码`,
+      generated_count: result.affectedRows,
+      codes: codes
+    });
+  } catch (err) {
+    console.error('批量生成考核码错误:', err);
+    res.status(500).json({ message: '服务器错误' });
+  }
+}; 
+
 // 生成高层考核码
 export const generateExecutiveCodes = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -361,14 +361,6 @@ export const generateExecutiveCodes = async (req: Request, res: Response): Promi
       WHERE title = '公司领导' AND status = 1
       ORDER BY id
     `) as [any[], any];
-
-    console.log('找到的公司领导数量:', leaderRows.length);
-    console.log('公司领导列表:', leaderRows);
-
-    if (leaderRows.length === 0) {
-      res.status(400).json({ message: '未找到公司领导人员' });
-      return;
-    }
 
     // 删除当年部门ID为1的考核码
     const currentYear = new Date().getFullYear();
@@ -386,17 +378,13 @@ export const generateExecutiveCodes = async (req: Request, res: Response): Promi
       const code = generateRandomCode();
       codes.push(code);
       values.push([code, 1, leader.name, 1, 1]); // department_id=1, weight=1, status=1
-      console.log(`为 ${leader.name} 生成考核码: ${code}`);
     }
 
     if (values.length > 0) {
-      console.log(`准备插入 ${values.length} 个考核码`);
       const [result] = await db.query(`
         INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
         VALUES ?
       `, [values]) as [any, any];
-
-      console.log(`实际插入 ${result.affectedRows} 个考核码`);
 
       res.status(201).json({ 
         message: `成功生成 ${result.affectedRows} 个高层考核码，删除了 ${deleteResult.affectedRows} 个旧考核码`,

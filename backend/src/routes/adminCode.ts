@@ -29,11 +29,11 @@ router.put('/:id', adminAuth, updateEvaluationCode);
 // 删除考核码
 router.delete('/:id', adminAuth, deleteEvaluationCode);
 
-// 批量生成考核码
-router.post('/generate', adminAuth, generateEvaluationCodes);
-
 // 生成高层考核码
 router.post('/generate-executive', adminAuth, generateExecutiveCodes);
+
+// 批量生成考核码
+router.post('/generate', adminAuth, generateEvaluationCodes);
 
 // 获取考核码统计信息
 router.get('/stats/overview', adminAuth, getEvaluationCodeStats);
