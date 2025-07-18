@@ -31,6 +31,12 @@ interface EvaluationCode {
   updated_at: string;
 }
 
+interface Task {
+  id: number;
+  name: string;
+  status: string;
+}
+
 const CodeManager: React.FC = () => {
   const { admin } = useAuth();
   const [codes, setCodes] = useState<EvaluationCode[]>([]);
@@ -47,6 +53,8 @@ const CodeManager: React.FC = () => {
   const [oneKeyLoading, setOneKeyLoading] = useState(false);
   const [leaders, setLeaders] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<number | undefined>(undefined);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
@@ -72,6 +80,7 @@ const CodeManager: React.FC = () => {
         order: 'asc',
       };
       if (filterDept) params.department_id = filterDept;
+      if (selectedTask) params.task_id = selectedTask;
       const res = await axios.get(`${API_BASE}/api/admin/code`, {
         headers: { Authorization: `Bearer ${admin?.token}` },
         params
@@ -122,6 +131,10 @@ const CodeManager: React.FC = () => {
 
   // 一键生成考核码
   const handleOneKeyGenerate = async () => {
+    if (!selectedTask) {
+      message.warning('请先选择考核任务');
+      return;
+    }
     setOneKeyLoading(true);
     try {
       // 1. 生成高层考核码
@@ -145,7 +158,8 @@ const CodeManager: React.FC = () => {
           department_id: 2,
           evaluator_type: '中层管理人员',
           weight: 1,
-          count: midCount
+          count: midCount,
+          task_id: selectedTask
         }, {
           headers: { Authorization: `Bearer ${admin?.token}` }
         });
@@ -162,7 +176,8 @@ const CodeManager: React.FC = () => {
             department_id: dept.id,
             evaluator_type: '基层管理人员',
             weight: 1,
-            count: baseCount
+            count: baseCount,
+            task_id: selectedTask
           }, {
             headers: { Authorization: `Bearer ${admin?.token}` }
           });
@@ -172,7 +187,8 @@ const CodeManager: React.FC = () => {
             department_id: dept.id,
             evaluator_type: '职工代表',
             weight: 1,
-            count: workerCount
+            count: workerCount,
+            task_id: selectedTask
           }, {
             headers: { Authorization: `Bearer ${admin?.token}` }
           });
@@ -191,6 +207,15 @@ const CodeManager: React.FC = () => {
   useEffect(() => {
     if (admin) {
       fetchDepartments();
+      // 获取任务列表
+      axios.get(`${API_BASE}/api/task`, {
+        headers: { Authorization: `Bearer ${admin?.token}` }
+      }).then(res => {
+        setTasks(res.data.data || []);
+        // 默认选中第一个“进行中”任务
+        const running = (res.data.data || []).find((t: any) => t.status === '进行中');
+        setSelectedTask(running?.id);
+      });
       fetchCodes();
       fetchCompanyLeaders();
     }
@@ -257,12 +282,22 @@ const CodeManager: React.FC = () => {
       <div style={{ marginBottom: 16 }}>
         {/* 一键生成考核码分组 - 优化UI */}
         <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Select
+            value={selectedTask}
+            onChange={setSelectedTask}
+            placeholder="请选择考核任务"
+            style={{ width: 200, marginRight: 16 }}
+          >
+            {tasks.map(task => (
+              <Select.Option key={task.id} value={task.id}>{task.name}</Select.Option>
+            ))}
+          </Select>
           <span style={{ fontWeight: 500, fontSize: 15 }}>每个部门生成：</span>
           <InputNumber min={1} max={100} value={baseCount} onChange={v => setBaseCount(v || 1)} style={{ width: 70 }} />
           <span>个基层管理人员考核码，</span>
           <InputNumber min={1} max={200} value={workerCount} onChange={v => setWorkerCount(v || 1)} style={{ width: 70 }} />
           <span>个职工代表考核码</span>
-          <Button type="primary" loading={oneKeyLoading} onClick={handleOneKeyGenerate} style={{ marginLeft: 16 }}>
+          <Button type="primary" loading={oneKeyLoading} onClick={handleOneKeyGenerate} style={{ marginLeft: 16 }} disabled={!selectedTask}>
             一键生成考核码
           </Button>
         </div>

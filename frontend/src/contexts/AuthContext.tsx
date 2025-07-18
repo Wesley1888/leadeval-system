@@ -12,6 +12,7 @@ export interface User {
 
 // 管理员类型
 export interface Admin {
+  id: number;
   token: string;
   name: string;
   expiresAt?: number; // token过期时间戳

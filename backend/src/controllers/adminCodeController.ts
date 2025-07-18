@@ -13,8 +13,9 @@ export const getEvaluationCodes = async (req: Request, res: Response): Promise<v
       evaluator_type, 
       status,
       sort_by,
-      order
-    } = req.query as SearchParams & { page?: string; limit?: string; evaluator_type?: string; sort_by?: string; order?: string };
+      order,
+      task_id
+    } = req.query as SearchParams & { page?: string; limit?: string; evaluator_type?: string; sort_by?: string; order?: string; task_id?: string };
 
     let query = `
       SELECT ec.*, d.name as department_name
@@ -42,6 +43,11 @@ export const getEvaluationCodes = async (req: Request, res: Response): Promise<v
     if (status !== undefined) {
       query += ` AND ec.status = ?`;
       params.push(status);
+    }
+
+    if (task_id) {
+      query += ` AND ec.task_id = ?`;
+      params.push(task_id);
     }
 
     // 获取总数
@@ -111,7 +117,7 @@ export const createEvaluationCode = async (req: Request, res: Response): Promise
     const codeData: EvaluationCodeRequest = req.body;
     
     // 验证必填字段
-    if (!codeData.code || !codeData.department_id || !codeData.evaluator_type) {
+    if (!codeData.code || !codeData.department_id || !codeData.evaluator_type || !codeData.task_id) {
       res.status(400).json({ message: '缺少必填字段' });
       return;
     }
@@ -138,15 +144,27 @@ export const createEvaluationCode = async (req: Request, res: Response): Promise
       return;
     }
 
+    // 验证任务是否存在
+    const [taskRows] = await db.query(
+      'SELECT id FROM evaluation_tasks WHERE id = ?',
+      [codeData.task_id]
+    ) as [any[], any];
+
+    if (taskRows.length === 0) {
+      res.status(400).json({ message: '考核任务不存在' });
+      return;
+    }
+
     const [result] = await db.query(`
-      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status, task_id)
+      VALUES (?, ?, ?, ?, ?, ?)
     `, [
       codeData.code,
       codeData.department_id,
       codeData.evaluator_type,
       codeData.weight || 0,
-      codeData.status || 1
+      codeData.status || 1,
+      codeData.task_id
     ]) as [any, any];
 
     res.status(201).json({ 
@@ -281,11 +299,12 @@ export const importEvaluationCodes = async (req: Request, res: Response): Promis
       code.department_id,
       code.evaluator_type,
       code.weight || 0,
-      code.status || 1
+      code.status || 1,
+      code.task_id
     ]);
 
     const [result] = await db.query(`
-      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
+      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status, task_id)
       VALUES ?
     `, [values]) as [any, any];
 
@@ -306,10 +325,11 @@ export const generateEvaluationCodes = async (req: Request, res: Response): Prom
       department_id, 
       evaluator_type, 
       weight, 
-      count = 1 
+      count = 1, 
+      task_id
     } = req.body;
 
-    if (!department_id || !evaluator_type || count < 1 || count > 5000) {
+    if (!department_id || !evaluator_type || count < 1 || count > 5000 || !task_id) {
       res.status(400).json({ message: '参数错误' });
       return;
     }
@@ -325,6 +345,17 @@ export const generateEvaluationCodes = async (req: Request, res: Response): Prom
       return;
     }
 
+    // 验证任务是否存在
+    const [taskRows] = await db.query(
+      'SELECT id FROM evaluation_tasks WHERE id = ?',
+      [task_id]
+    ) as [any[], any];
+
+    if (taskRows.length === 0) {
+      res.status(400).json({ message: '考核任务不存在' });
+      return;
+    }
+
     const codes: string[] = [];
     const values: any[] = [];
 
@@ -332,11 +363,11 @@ export const generateEvaluationCodes = async (req: Request, res: Response): Prom
     for (let i = 0; i < count; i++) {
       const code = generateRandomCode();
       codes.push(code);
-      values.push([code, department_id, evaluator_type, weight || 0, 1]);
+      values.push([code, department_id, evaluator_type, weight || 0, 1, task_id]);
     }
 
     const [result] = await db.query(`
-      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status)
+      INSERT INTO evaluation_codes (code, department_id, evaluator_type, weight, status, task_id)
       VALUES ?
     `, [values]) as [any, any];
 

@@ -24,6 +24,7 @@ import DatabaseManager from './DatabaseManager';
 import StatResult from './StatResult';
 import axios from 'axios';
 import { message } from 'antd';
+import TodoManager from './TodoManager';
 
 const { Header, Sider, Content } = Layout;
 
@@ -143,6 +144,8 @@ const AdminPanel: React.FC = () => {
     content = <ProjectTasks />;
   } else if (selectedKey === 'database') {
     content = <DatabaseManager />;
+  } else if (selectedKey === 'todo') {
+    content = <TodoManager />;
   }
 
   return (
@@ -224,6 +227,11 @@ const AdminPanel: React.FC = () => {
                 key: 'database',
                 icon: <span style={{fontSize:16}}>🗄️</span>,
                 label: '数据库管理',
+              },
+              {
+                key: 'todo',
+                icon: <BellOutlined />,
+                label: '待办管理',
               },
             ]}
           />

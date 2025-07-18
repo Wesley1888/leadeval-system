@@ -72,6 +72,7 @@ export interface EvaluationCodeRequest {
   evaluator_type: string;
   weight: number;
   status?: number;
+  task_id: number;
 }
 
 // 考核任务相关类型

@@ -141,10 +141,10 @@ const DepartmentManager: React.FC = () => {
       });
       const maxCode = parseInt(res.data.maxCode || '0', 10);
       const nextCode = String(maxCode + 100).padStart(5, '0');
-      setEditing(null);
+    setEditing(null);
       form.setFieldsValue({ code: nextCode });
       form.resetFields(['name', 'parent_id', 'level', 'type', 'status']);
-      setModalOpen(true);
+    setModalOpen(true);
     } catch {
       message.error('获取最大部门编码失败');
     }

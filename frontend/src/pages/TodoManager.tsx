@@ -3,27 +3,24 @@ import { Card, Table, Button, Space, Modal, Form, Input, Popconfirm, message, Ta
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
-interface Task {
+interface TodoTask {
   id: number;
   name: string;
-  year: number;
-  start_date: string;
-  end_date: string;
   description: string;
-  status: number;
-  created_by: number;
+  status: string;
+  owner: string;
   created_at: string;
   updated_at: string;
 }
 
 const statusOptions = ['未开始', '进行中', '已完成'];
 
-const ProjectTasks: React.FC = () => {
+const TodoManager: React.FC = () => {
   const { admin } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TodoTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Task | null>(null);
+  const [editing, setEditing] = useState<TodoTask | null>(null);
   const [form] = Form.useForm();
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
@@ -31,12 +28,12 @@ const ProjectTasks: React.FC = () => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/admin/task`, {
+      const res = await axios.get(`${API_BASE}/api/task`, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
       setTasks(res.data.data || []);
     } catch (err: any) {
-      message.error(err.response?.data?.message || '获取考核任务失败');
+      message.error(err.response?.data?.message || '获取待办任务失败');
     } finally {
       setLoading(false);
     }
@@ -50,11 +47,11 @@ const ProjectTasks: React.FC = () => {
   const handleAdd = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ created_by: admin?.id, status: 1 });
+    form.setFieldsValue({ owner: admin?.name, status: '未开始' });
     setModalOpen(true);
   };
 
-  const handleEdit = (task: Task) => {
+  const handleEdit = (task: TodoTask) => {
     setEditing(task);
     form.setFieldsValue(task);
     setModalOpen(true);
@@ -62,7 +59,7 @@ const ProjectTasks: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`${API_BASE}/api/admin/task/${id}`, {
+      await axios.delete(`${API_BASE}/api/task/${id}`, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
       message.success('已删除');
@@ -81,13 +78,14 @@ const ProjectTasks: React.FC = () => {
     }
     try {
       if (editing) {
-        await axios.put(`${API_BASE}/api/admin/task/${editing.id}`, values, {
+        values.owner = admin?.name;
+        await axios.put(`${API_BASE}/api/task/${editing.id}`, values, {
           headers: { Authorization: `Bearer ${admin?.token}` }
         });
         message.success('修改成功');
       } else {
-        values.created_by = admin?.id;
-        await axios.post(`${API_BASE}/api/admin/task`, values, {
+        values.owner = admin?.name;
+        await axios.post(`${API_BASE}/api/task`, values, {
           headers: { Authorization: `Bearer ${admin?.token}` }
         });
         message.success('添加成功');
@@ -102,25 +100,51 @@ const ProjectTasks: React.FC = () => {
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '任务名称', dataIndex: 'name', key: 'name', width: 160 },
-    { title: '年度', dataIndex: 'year', key: 'year', width: 80 },
-    { title: '时间范围', key: 'date_range', width: 180, render: (_: any, record: Task) => `${record.start_date} ~ ${record.end_date}` },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (status: number) => {
-      let color = 'default';
-      if (status === 3) color = 'green';
-      else if (status === 2) color = 'blue';
-      else if (status === 1) color = 'orange';
-      return <Tag color={color}>{status === 1 ? '未开始' : status === 2 ? '进行中' : '已完成'}</Tag>;
-    } },
     { title: '描述', dataIndex: 'description', key: 'description', width: 220, ellipsis: true },
-    { title: '创建人', dataIndex: 'created_by', key: 'created_by', width: 100 },
-    { title: '更新时间', dataIndex: 'updated_at', key: 'updated_at', width: 140 },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status: string) => {
+        let color = 'default';
+        if (status === '已完成') color = 'green';
+        else if (status === '进行中') color = 'blue';
+        else if (status === '未开始') color = 'orange';
+        return <Tag color={color}>{status}</Tag>;
+      }
+    },
+    { 
+      title: '更新时间', 
+      dataIndex: 'updated_at', 
+      key: 'updated_at', 
+      width: 140,
+      render: (updated_at: string, record: TodoTask) => {
+        const formatDate = (dateString: string) => {
+          const date = new Date(dateString);
+          return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        };
+        return (
+          <Space>
+            <span>{formatDate(updated_at)}</span>
+            <Tag color="purple">{record.owner}</Tag>
+          </Space>
+        );
+      }
+    },
     {
       title: '操作',
       key: 'action',
       width: 120,
-      render: (_: any, record: Task) => (
+      render: (_: any, record: TodoTask) => (
         <Space>
-          <Button size="small" onClick={() => handleEdit(record)} disabled={record.status === 3}>编辑</Button>
+          <Button size="small" onClick={() => handleEdit(record)} disabled={record.status === '已完成'}>编辑</Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
             <Button size="small" danger>删除</Button>
           </Popconfirm>
@@ -130,7 +154,7 @@ const ProjectTasks: React.FC = () => {
   ];
 
   return (
-    <Card title="项目任务管理" extra={<Button type="primary" onClick={handleAdd}>添加任务</Button>}>
+    <Card title="待办管理" extra={<Button type="primary" onClick={handleAdd}>添加待办</Button>}>
       <Table
         rowKey="id"
         columns={columns}
@@ -139,32 +163,21 @@ const ProjectTasks: React.FC = () => {
         pagination={{ pageSize: 50 }}
         scroll={{ x: 1200 }}
       />
-      <Modal open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleOk} title={editing ? '编辑任务' : '添加任务'}>
+      <Modal open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleOk} title={editing ? '编辑待办' : '添加待办'}>
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="任务名称" rules={[{ required: true, message: '请输入任务名称' }]}> 
             <Input />
           </Form.Item>
-          <Form.Item name="year" label="年度" rules={[{ required: true, message: '请输入年度' }]}> 
-            <Input type="number" />
-          </Form.Item>
-          <Form.Item name="start_date" label="开始日期" rules={[{ required: true, message: '请选择开始日期' }]}> 
-            <Input type="date" />
-          </Form.Item>
-          <Form.Item name="end_date" label="结束日期" rules={[{ required: true, message: '请选择结束日期' }]}> 
-            <Input type="date" />
+          <Form.Item name="description" label="描述" rules={[{ required: true, message: '请输入描述' }]}> 
+            <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="status" label="状态" rules={[{ required: true, message: '请选择状态' }]}> 
             <Select>
-              <Select.Option value={1}>未开始</Select.Option>
-              <Select.Option value={2}>进行中</Select.Option>
-              <Select.Option value={3}>已完成</Select.Option>
+              {statusOptions.map(s => <Select.Option key={s} value={s}>{s}</Select.Option>)}
             </Select>
           </Form.Item>
-          <Form.Item name="description" label="描述"> 
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item name="created_by" label="创建人ID" hidden>
-            <Input type="number" />
+          <Form.Item name="owner" label="负责人" rules={[{ required: true, message: '请输入负责人' }]}> 
+            <Input disabled />
           </Form.Item>
         </Form>
       </Modal>
@@ -172,4 +185,4 @@ const ProjectTasks: React.FC = () => {
   );
 };
 
-export default ProjectTasks; 
+export default TodoManager; 

@@ -32,6 +32,7 @@ const AdminLogin: React.FC = () => {
       if (res.data.success && res.data.token && res.data.admin) {
         message.success('登录成功');
         const adminData = {
+          id: res.data.admin.id,
           token: res.data.token,
           name: res.data.admin.name,
           expiresAt: Date.now() + 2 * 60 * 60 * 1000, // 2小时后过期
