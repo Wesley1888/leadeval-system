@@ -41,7 +41,36 @@ export const createTask = async (req: Request, res: Response) => {
       'INSERT INTO evaluation_tasks (name, year, start_date, end_date, status, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
       [name, year, start_date, end_date, status || 1, description || '', created_by]
     ) as [any, any];
-    res.status(201).json({ id: result.insertId });
+    const taskId = result.insertId;
+
+    // 快照所有有效人员
+    const [persons] = await db.query(
+      `SELECT p.id as person_id, p.name as person_name, p.department_id, d.name as department_name, p.title as role
+       FROM persons p
+       LEFT JOIN departments d ON p.department_id = d.id
+       WHERE p.status = 1`
+    ) as [any[], any];
+    if (persons.length > 0) {
+      const personValues = persons.map((p: any) => [taskId, p.person_id, p.department_id, p.person_name, p.department_name, p.role]);
+      await db.query(
+        'INSERT INTO evaluation_task_persons (task_id, person_id, department_id, person_name, department_name, role) VALUES ?',
+        [personValues]
+      );
+    }
+
+    // 快照所有有效部门
+    const [departments] = await db.query(
+      `SELECT id as department_id, name as department_name FROM departments WHERE status = 1`
+    ) as [any[], any];
+    if (departments.length > 0) {
+      const deptValues = departments.map((d: any) => [taskId, d.department_id, d.department_name]);
+      await db.query(
+        'INSERT INTO evaluation_task_departments (task_id, department_id, department_name) VALUES ?',
+        [deptValues]
+      );
+    }
+
+    res.status(201).json({ id: taskId });
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }
@@ -80,6 +109,34 @@ export const deleteTask = async (req: Request, res: Response) => {
       return;
     }
     res.json({ message: '删除成功' });
+  } catch (err) {
+    res.status(500).json({ message: '服务器错误' });
+  }
+};
+
+// 获取某任务的人员快照
+export const getTaskPersons = async (req: Request, res: Response) => {
+  const { taskId } = req.params;
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM evaluation_task_persons WHERE task_id = ? ORDER BY department_id, person_name',
+      [taskId]
+    ) as [any[], any];
+    res.json({ data: rows });
+  } catch (err) {
+    res.status(500).json({ message: '服务器错误' });
+  }
+};
+
+// 获取某任务的部门快照
+export const getTaskDepartments = async (req: Request, res: Response) => {
+  const { taskId } = req.params;
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM evaluation_task_departments WHERE task_id = ? ORDER BY department_name',
+      [taskId]
+    ) as [any[], any];
+    res.json({ data: rows });
   } catch (err) {
     res.status(500).json({ message: '服务器错误' });
   }

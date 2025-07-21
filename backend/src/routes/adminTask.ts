@@ -7,5 +7,7 @@ router.get('/', adminTaskController.getTasks);
 router.post('/', adminTaskController.createTask);
 router.put('/:id', adminTaskController.updateTask);
 router.delete('/:id', adminTaskController.deleteTask);
+router.get('/:taskId/persons', adminTaskController.getTaskPersons);
+router.get('/:taskId/departments', adminTaskController.getTaskDepartments);
 
 export default router; 

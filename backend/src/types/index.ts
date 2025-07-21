@@ -357,4 +357,23 @@ export interface ExportResponse {
   message: string;
   download_url?: string;
   filename?: string;
+}
+
+export interface EvaluationTaskPerson {
+  id: number;
+  task_id: number;
+  person_id: number;
+  department_id: number;
+  person_name: string;
+  department_name: string;
+  role?: string;
+  created_at: string;
+}
+
+export interface EvaluationTaskDepartment {
+  id: number;
+  task_id: number;
+  department_id: number;
+  department_name: string;
+  created_at: string;
 } 
