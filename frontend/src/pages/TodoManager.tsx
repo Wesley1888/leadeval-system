@@ -31,7 +31,22 @@ const TodoManager: React.FC = () => {
       const res = await axios.get(`${API_BASE}/api/task`, {
         headers: { Authorization: `Bearer ${admin?.token}` }
       });
-      setTasks(res.data.data || []);
+      
+      // 对任务进行排序：按时间排序，已完成的放后面
+      const sortedTasks = (res.data.data || []).sort((a: TodoTask, b: TodoTask) => {
+        // 首先按状态排序：未完成的在前，已完成的在后
+        const statusOrder = { '未开始': 0, '进行中': 1, '已完成': 2 };
+        const statusDiff = statusOrder[a.status as keyof typeof statusOrder] - statusOrder[b.status as keyof typeof statusOrder];
+        
+        if (statusDiff !== 0) {
+          return statusDiff;
+        }
+        
+        // 状态相同时，按更新时间倒序排列（最新的在前）
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      });
+      
+      setTasks(sortedTasks);
     } catch (err: any) {
       message.error(err.response?.data?.message || '获取待办任务失败');
     } finally {
@@ -155,6 +170,9 @@ const TodoManager: React.FC = () => {
 
   return (
     <Card title="待办管理" extra={<Button type="primary" onClick={handleAdd}>添加待办</Button>}>
+      <div style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+        📋 排序规则：未完成的任务优先显示，相同状态下按更新时间倒序排列
+      </div>
       <Table
         rowKey="id"
         columns={columns}
