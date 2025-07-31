@@ -201,7 +201,14 @@ const ProjectTasks: React.FC = () => {
         columns={columns}
         dataSource={tasks}
         loading={loading}
-        pagination={{ pageSize: 50 }}
+        pagination={{ 
+          pageSize: 50,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} 共 ${total} 条`,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          size: 'default'
+        }}
         scroll={{ x: 1200 }}
       />
       <Modal open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleOk} title={editing ? '编辑任务' : '添加任务'}>
@@ -246,7 +253,14 @@ const ProjectTasks: React.FC = () => {
             ]}
             dataSource={persons}
             loading={snapshotLoading}
-            pagination={{ pageSize: 50 }}
+            pagination={{ 
+              pageSize: 50,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} 共 ${total} 条`,
+              pageSizeOptions: ['10', '20', '50', '100'],
+              size: 'small'
+            }}
             size="small"
           />
         }, {
@@ -259,7 +273,14 @@ const ProjectTasks: React.FC = () => {
             ]}
             dataSource={departments}
             loading={snapshotLoading}
-            pagination={{ pageSize: 50 }}
+            pagination={{ 
+              pageSize: 50,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} 共 ${total} 条`,
+              pageSizeOptions: ['10', '20', '50', '100'],
+              size: 'small'
+            }}
             size="small"
           />
         }]} />

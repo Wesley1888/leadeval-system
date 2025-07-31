@@ -122,7 +122,14 @@ const StatResult: React.FC = () => {
         columns={statColumns}
         dataSource={stat}
         loading={loading}
-        pagination={{ pageSize: 50 }}
+        pagination={{ 
+          pageSize: 50,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} 共 ${total} 条`,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          size: 'default'
+        }}
         scroll={{ x: 'max-content' }}
       />
     </Card>

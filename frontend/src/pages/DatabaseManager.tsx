@@ -239,7 +239,14 @@ const DatabaseManager: React.FC = () => {
                   }
                 }))}
                 dataSource={tableData.data.map((row, idx) => ({ key: idx, ...row }))}
-                pagination={{ pageSize: 20 }}
+                pagination={{ 
+                  pageSize: 20,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} 共 ${total} 条`,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                  size: 'small'
+                }}
                 scroll={{ x: 'max-content' }}
                 size="small"
               />
@@ -314,7 +321,14 @@ const DatabaseManager: React.FC = () => {
                     }
                   }))}
                   dataSource={item.result.data.map((row, index) => ({ key: index, ...row }))}
-                  pagination={{ pageSize: 50 }}
+                  pagination={{ 
+          pageSize: 50,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} 共 ${total} 条`,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          size: 'default'
+        }}
                   scroll={{ x: 'max-content' }}
                   size="small"
                 />

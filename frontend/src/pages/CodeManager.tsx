@@ -45,7 +45,15 @@ const CodeManager: React.FC = () => {
 
   // 添加缺失的状态变量
   const [filterDept, setFilterDept] = useState<number | undefined>(undefined);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 50, total: 0 });
+  const [pagination, setPagination] = useState({ 
+    current: 1, 
+    pageSize: 50, 
+    total: 0,
+    showSizeChanger: true,
+    showQuickJumper: true,
+    showTotal: (total: number, range: [number, number]) =>
+      `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+  });
 
   // 新增：一键生成考核码相关状态
   const [baseCount, setBaseCount] = useState<number>(10);
@@ -86,11 +94,12 @@ const CodeManager: React.FC = () => {
         params
       });
       setCodes(res.data.data || []);
-      setPagination({
+      setPagination(prev => ({
+        ...prev,
         current: page,
         pageSize,
         total: res.data.total || 0
-      });
+      }));
     } catch (err: any) {
       message.error(err.response?.data?.message || '获取考核码失败');
     } finally {
